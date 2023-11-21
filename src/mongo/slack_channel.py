@@ -32,8 +32,7 @@ class SlackChannel:
         channel = self.get_channel_by_id(channel_id)
         if channel is None:
             self.create_channel_by_id(channel_id)
-            channel = self.get_channel_by_id(channel_id)
-            return SlackChannelObject(self.collection, channel)
+            return self.get_channel_by_id(channel_id)
         else:
             return channel
         

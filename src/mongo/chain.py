@@ -29,8 +29,7 @@ class Chain:
         chain = self.get_chain_by_name(chain_name)
         if chain is None:
             self.create_chain_by_name(chain_name)
-            chain = self.create_chain_by_name(chain_name)
-            return ChainObject(self.collection, chain)
+            return self.get_chain_by_name(chain_name)
         else:
             return chain
         
