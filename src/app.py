@@ -1,7 +1,7 @@
 import argparse
 from config import Config
 from chain_registry import ChainRegistry
-from mongo import get_client as get_mongo_client, get_database as get_mongo_database, Channel
+from mongo import get_client as get_mongo_client, get_database as get_mongo_database, SlackChannel
 
 import logging
 from slack_sdk import WebClient
@@ -27,7 +27,6 @@ def main():
 
     mongo_db = get_mongo_database(mongo_client)
 
-
     slack_client = WebClient(token=config.slack_bot_token, logger=logger)
     
     configured_channel = None
@@ -47,7 +46,7 @@ def main():
     if configured_channel["is_archived"]:
         raise Exception(f"Configured slack channel {config.slack_channel_id} is archived")
 
-    channel = Channel(mongo_db).find_or_create_channel_by_id(config.slack_channel_id)
-    
+    channel = SlackChannel(mongo_db).find_or_create_channel_by_id(config.slack_channel_id)
+
 if __name__ == '__main__':
     main()
