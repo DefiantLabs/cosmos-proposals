@@ -71,9 +71,33 @@ def main():
             active_proposals = chain["chain_registry_entry"].get_active_proposals()
 
             for proposal in active_proposals["proposals"]:
+
+                logger.info(f"Found active proposal {proposal['proposal_id']} on chain {chain_name}")
+
                 proposal_object = Proposal(mongo_db).find_or_create_proposal_by_chain_and_id(chain["chain_object"]._id, proposal["proposal_id"])
-                submit_time = datetime.strptime(proposal["submit_time"].split(".")[0], "%Y-%m-%dT%H:%M:%S")
-                proposal_object.get_or_set_proposal_submit_time(submit_time)
+                submit_time = proposal_object.get_or_set_proposal_submit_time(datetime.strptime(proposal["submit_time"].split(".")[0], "%Y-%m-%dT%H:%M:%S"))
+
+                logger.info(f"Proposal {proposal['proposal_id']} submit time is {submit_time}")
+                
+                # check if submit time is less than the 
+                if submit_time > channel.created_at:
+                    if not channel.is_proposal_notified(proposal_object._id):
+                        logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
+                        # try:
+                        #     slack_client.chat_postMessage(
+                        #         channel=config.slack_channel_id,
+                        #         text=f"New proposal on {chain_name}:\n{proposal['content']['title']}"
+                        #     )
+                        # except SlackApiError as e:
+                        #     logger.error(f"Got an error: {e.response['error']}")
+
+                        channel.set_proposal_notified(proposal_object._id)
+                    else:
+                        logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
+                else:
+                    logger.info(f"Proposal {proposal['proposal_id']} was made before channel initialization, skipping")
+
+                    
 
         logger.info("Main loop finished, sleeping")
         time.sleep(30)

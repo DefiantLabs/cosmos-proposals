@@ -9,6 +9,19 @@ class SlackChannelObject:
         self.created_at = doc["created_at"]
         self.updated_at = doc["updated_at"]
 
+        if "proposals_notified" in doc:
+            self.proposals_notified = doc["proposals_notified"]
+        else:
+            self.proposals_notified = {}
+
+    def is_proposal_notified(self, proposal_id):
+        return str(proposal_id) in self.proposals_notified
+
+    def set_proposal_notified(self, proposal_id):
+        self.proposals_notified[str(proposal_id)] = True
+        time_now = datetime.utcnow()
+        self.collection.update_one({"_id": self._id}, {"$set": {"updated_at": time_now, "proposals_notified": self.proposals_notified}})
+
 class SlackChannel:
 
     """Represents a Slack channel in the database"""
