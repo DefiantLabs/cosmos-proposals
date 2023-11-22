@@ -9,9 +9,9 @@ from slack_sdk.errors import SlackApiError
 from pprint import pprint
 import time
 
+from log import get_configured_logger
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+LOG_LEVEL = logging.DEBUG
 
 def get_app_args():
     parser = argparse.ArgumentParser(description="Cosmos proposal Slack monitor")
@@ -19,12 +19,13 @@ def get_app_args():
     return parser.parse_args()
 
 def main():
-    
+    logger = get_configured_logger(__name__, LOG_LEVEL, "")
+
     args = get_app_args()
 
     config = Config(args.config)
 
-    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location)
+    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=LOG_LEVEL)
 
     mongo_client = get_mongo_client(config.mongo_uri)
 

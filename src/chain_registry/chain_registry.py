@@ -3,16 +3,17 @@ from fs.zipfs import ZipFS
 import io
 import json
 from .chain import Chain
-
+from logging import INFO
 class ChainRegistry:
 
     archive = None
 
-    def __init__(self, zip_url="https://github.com/cosmos/chain-registry/archive/refs/heads/master.zip", zip_location=None):
+    def __init__(self, zip_url="https://github.com/cosmos/chain-registry/archive/refs/heads/master.zip", zip_location=None, log_level=INFO):
         self.zip_url = zip_url
         self.loaded = False
         self.archive_contents = None
         self.zip_location = zip_location
+        self.log_level = log_level
 
         self.mainnets = {}
         self.testnets = {}
@@ -60,13 +61,13 @@ class ChainRegistry:
                 continue
             try:
                 if chain["network_type"] == "mainnet":
-                    mainnets[chain_path] = Chain(chain)
+                    mainnets[chain_path] = Chain(chain, self.log_level)
                 elif chain["network_type"] == "testnet":
-                    testnets[chain_path] = Chain(chain)
+                    testnets[chain_path] = Chain(chain, self.log_level)
                 elif chain["network_type"] == "devnet":
-                    devnets[chain_path] = Chain(chain)
+                    devnets[chain_path] = Chain(chain, self.log_level)
                 else:
-                    unknown[chain_path] = Chain(chain)
+                    unknown[chain_path] = Chain(chain, self.log_level)
             except:
                 print(f"Unable to extract chain information for {chain_path}")
                 continue
