@@ -83,19 +83,21 @@ def main():
                 if submit_time > channel.created_at:
                     if not channel.is_proposal_notified(proposal_object._id):
                         logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
-                        notification = get_new_proposal_slack_notification(chain["chain_registry_entry"], proposal)
-                        logger.debug(f"Notification: {notification}")
+                        text, blocks = get_new_proposal_slack_notification(chain["chain_registry_entry"], proposal)
+                        logger.debug(f"Text: {text}")
+                        logger.debug(f"Blocks: {blocks}")
                         try:
                             slack_client.chat_postMessage(
                                 channel=config.slack_channel_id,
-                                text=notification
+                                text=text,
+                                blocks=blocks
                             )
                         except SlackApiError as e:
                             logger.error(f"Got an error: {e.response['error']}")
-
-                        channel.set_proposal_notified(proposal_object._id)
-                        logger.info(f"Proposal {proposal['proposal_id']} notified")
-                        time.sleep(10)
+                        else:
+                            channel.set_proposal_notified(proposal_object._id)
+                            logger.info(f"Proposal {proposal['proposal_id']} notified")
+                            time.sleep(10)
                     else:
                         logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
                 else:
@@ -108,7 +110,29 @@ def main():
 
 def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain, proposal):
 
-    mintscan_chain_url = chain_registry_entry.get_explorer(explorer_name="mintscan")
+    mintscan_chain_explorer = chain_registry_entry.get_explorer(explorer_name="mintscan")
+
+    explorer_link = None
+    if mintscan_chain_explorer is not None:
+        explorer_url = f"{mintscan_chain_explorer['url']}/proposals/{proposal['proposal_id']}"
+        explorer_link = {
+			"type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<{explorer_url}|View on Mintscan>"
+            }
+        }
+    elif mintscan_chain_explorer is None and chain_registry_entry.chain_id == "pirin-1":
+        ping_pub_chain_explorer = chain_registry_entry.get_explorer(explorer_name="ping.pub")
+        explorer_url = f"{ping_pub_chain_explorer['url']}/gov/{proposal['proposal_id']}"
+        explorer_link = {
+			"type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<{explorer_url}|View on Ping.pub>"
+            }
+        }
+
     chain_name = chain_registry_entry.pretty_name
     chain_id = chain_registry_entry.chain_id
 
@@ -117,7 +141,51 @@ def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain
     except:
         title = f"No title (Type is {proposal['content']['@type']})"
 
-    return f"New proposal on {chain_name} ({chain_id}):\n#{proposal['proposal_id']}. {title}"
+    description = ""
+    try:
+        description = proposal['content']['description']
+
+        if len(description) > 200:
+            description = description[:300] + "..."
+    except:
+        pass
+
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": f":mega: New proposal on {chain_name} ({chain_id})"
+		    }
+	    },
+        {
+			"type": "divider"
+		},
+        {
+			"type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"#{proposal['proposal_id']}. {title}"
+            }
+        },
+    ]
+
+    if description != "":
+        blocks.append({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": description
+            }
+        })
+
+
+    if explorer_link is not None:
+        blocks.append(explorer_link)
+
+    text = f"New proposal on {chain_name} ({chain_id}): #{proposal['proposal_id']}. {title}"
+
+    return text, blocks
 
 
 if __name__ == '__main__':
