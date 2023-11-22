@@ -93,7 +93,7 @@ def main():
                                 blocks=blocks
                             )
                         except SlackApiError as e:
-                            logger.error(f"Got an error: {e.response['error']}")
+                            logger.error(f"Error sending Slack notification: {e.response['error']}")
                         else:
                             channel.set_proposal_notified(proposal_object._id)
                             logger.info(f"Proposal {proposal['proposal_id']} notified")
