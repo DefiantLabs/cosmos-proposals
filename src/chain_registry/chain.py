@@ -14,17 +14,25 @@ requests.packages.urllib3.disable_warnings(
 )
 
 class Chain():
-    def __init__(self, chain_data, log_level=INFO):
+    def __init__(self, chain_data, log_level=INFO, default_explorer="mintscan"):
         self.chain_data = chain_data
-        print(log_level)
         self.logger = get_configured_logger(__name__, log_level, "")
 
         self.chain_id = chain_data["chain_id"]
         self.rpc_servers = list(map(lambda x: x["address"], chain_data["apis"]["rpc"]))
         self.rest_servers = list(map(lambda x: x["address"], chain_data["apis"]["rest"]))
+        self.explorers = chain_data["explorers"]
+        self.default_explorer = default_explorer
+        self.pretty_name = ""
 
+        if "pretty_name" in chain_data:
+            self.pretty_name = chain_data["pretty_name"]
+        elif "chain_name" in chain_data:
+            self.pretty_name = chain_data["chain_name"]
+        else:
+            self.pretty_name = self.chain_id
         self.logger.debug("Initialized chain %s with RPC servers %s and REST servers %s", self.chain_id, self.rpc_servers, self.rest_servers)
-    
+
     def get_chain_id(self):
         return self.chain_id
     
@@ -67,6 +75,15 @@ class Chain():
         self.logger.debug("Chain %s endpoint %s is unhealthy due to error responses", self.chain_id, endpoint)
         return False
         
+    def get_explorer(self, explorer_name=None):
+
+        for explorer in self.explorers:
+            if explorer_name is not None and explorer["kind"] == explorer_name:
+                return explorer
+            elif explorer["kind"] == self.default_explorer:
+                return explorer
+        return None
+        
     def get_active_proposals(self):
         resp = None
         healthy_endpoints = self.get_healthy_rest_servers()
@@ -74,10 +91,14 @@ class Chain():
         self.logger.debug("Attempting proposal request for chain %s with %d healthy endpoints", self.chain_id, len(healthy_endpoints))
         for endpoint in healthy_endpoints:
             self.logger.debug("Attempting proposal request for chain %s at %s", self.chain_id, endpoint)
-            response = requests.get(
-                f"{endpoint}/cosmos/gov/v1beta1/proposals?proposal_status=2",
-                verify=False,
-            )
+            try:
+                response = requests.get(
+                    f"{endpoint}/cosmos/gov/v1beta1/proposals?proposal_status=2",
+                    verify=False,
+                )
+            except Exception as e:
+                self.logger.debug("Proposal request failed for chain %s at %s: %s", self.chain_id, endpoint, e)
+                continue
             if response.status_code == 200:
                 resp = response
                 break

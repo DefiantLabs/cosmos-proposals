@@ -4,6 +4,7 @@ import io
 import json
 from .chain import Chain
 from logging import INFO
+from log import get_configured_logger
 class ChainRegistry:
 
     archive = None
@@ -14,7 +15,7 @@ class ChainRegistry:
         self.archive_contents = None
         self.zip_location = zip_location
         self.log_level = log_level
-
+        self.logger = get_configured_logger(__name__, self.log_level, "")
         self.mainnets = {}
         self.testnets = {}
         self.devnets = {}
@@ -69,7 +70,7 @@ class ChainRegistry:
                 else:
                     unknown[chain_path] = Chain(chain, self.log_level)
             except:
-                print(f"Unable to extract chain information for {chain_path}")
+                self.logger.error(f"Unable to extract chain information for {chain_path}")
                 continue
 
         self.mainnets = mainnets

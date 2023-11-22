@@ -1,17 +1,16 @@
 import argparse
 from config import Config
-from chain_registry import ChainRegistry
+from chain_registry import ChainRegistry, Chain as ChainRegistryChain
 from mongo import get_client as get_mongo_client, get_database as get_mongo_database, SlackChannel, Chain, Proposal
 from datetime import datetime
 import logging
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from pprint import pprint
 import time
 
 from log import get_configured_logger
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
 def get_app_args():
     parser = argparse.ArgumentParser(description="Cosmos proposal Slack monitor")
@@ -80,19 +79,23 @@ def main():
 
                 logger.info(f"Proposal {proposal['proposal_id']} submit time is {submit_time}")
                 
-                # check if submit time is less than the 
+                # check if submit time is less than the time when the channel was added to the app
                 if submit_time > channel.created_at:
                     if not channel.is_proposal_notified(proposal_object._id):
                         logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
-                        # try:
-                        #     slack_client.chat_postMessage(
-                        #         channel=config.slack_channel_id,
-                        #         text=f"New proposal on {chain_name}:\n{proposal['content']['title']}"
-                        #     )
-                        # except SlackApiError as e:
-                        #     logger.error(f"Got an error: {e.response['error']}")
+                        notification = get_new_proposal_slack_notification(chain["chain_registry_entry"], proposal)
+                        logger.debug(f"Notification: {notification}")
+                        try:
+                            slack_client.chat_postMessage(
+                                channel=config.slack_channel_id,
+                                text=notification
+                            )
+                        except SlackApiError as e:
+                            logger.error(f"Got an error: {e.response['error']}")
 
                         channel.set_proposal_notified(proposal_object._id)
+                        logger.info(f"Proposal {proposal['proposal_id']} notified")
+                        time.sleep(10)
                     else:
                         logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
                 else:
@@ -101,7 +104,21 @@ def main():
                     
 
         logger.info("Main loop finished, sleeping")
-        time.sleep(30)
+        time.sleep(60)
+
+def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain, proposal):
+
+    mintscan_chain_url = chain_registry_entry.get_explorer(explorer_name="mintscan")
+    chain_name = chain_registry_entry.pretty_name
+    chain_id = chain_registry_entry.chain_id
+
+    try:
+        title = proposal['content']['title']
+    except:
+        title = f"No title (Type is {proposal['content']['@type']})"
+
+    return f"New proposal on {chain_name} ({chain_id}):\n#{proposal['proposal_id']}. {title}"
+
 
 if __name__ == '__main__':
     main()
