@@ -10,21 +10,20 @@ import time
 
 from log import get_configured_logger
 
-LOG_LEVEL = logging.INFO
-
 def get_app_args():
     parser = argparse.ArgumentParser(description="Cosmos proposal Slack monitor")
     parser.add_argument('--config', default='./config.json')
     return parser.parse_args()
 
 def main():
-    logger = get_configured_logger(__name__, LOG_LEVEL, "")
 
     args = get_app_args()
 
     config = Config(args.config)
 
-    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=LOG_LEVEL)
+    logger = get_configured_logger(__name__, config.log_level, "")
+
+    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level)
 
     mongo_client = get_mongo_client(config.mongo_uri)
 
@@ -52,7 +51,7 @@ def main():
     channel = SlackChannel(mongo_db).find_or_create_channel_by_id(config.slack_channel_id)
 
     chains = {}
-    for chain in config.chains["mainnet"]:
+    for chain in config.chains:
         chain_registry_entry = chain_registry.get_chain(chain)
         chain_object = Chain(mongo_db).find_or_create_chain_by_name(chain)
         chains[chain] = {
@@ -68,7 +67,12 @@ def main():
     while True:
         for chain_name, chain in chains.items():
             logger.info(f"Requesting active proposals for chain {chain_name}")
-            active_proposals = chain["chain_registry_entry"].get_active_proposals()
+            try:
+                active_proposals = chain["chain_registry_entry"].get_active_proposals()
+            except Exception as e:
+                logger.error(f"Unable to get active proposals for chain {chain_name}")
+                logger.error(f"Error: {e}")
+                continue
 
             for proposal in active_proposals["proposals"]:
 
@@ -80,6 +84,7 @@ def main():
                 logger.info(f"Proposal {proposal['proposal_id']} submit time is {submit_time}")
                 
                 # check if submit time is less than the time when the channel was added to the app
+                # TODO: Possibly remove this, so that we always show any active proposals
                 if submit_time > channel.created_at:
                     if not channel.is_proposal_notified(proposal_object._id):
                         logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
@@ -145,7 +150,7 @@ def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain
     try:
         description = proposal['content']['description']
 
-        if len(description) > 200:
+        if len(description) > 300:
             description = description[:300] + "..."
     except:
         pass

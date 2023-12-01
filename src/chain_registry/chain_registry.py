@@ -27,14 +27,17 @@ class ChainRegistry:
     def load(self):
 
         if ChainRegistry.archive is not None:
+            self.logger.debug("Using static chain registry archive")
             self.loaded = True
             return
 
         if self.zip_location:
+            self.logger.debug("Loading chain registry from local zip file")
             ChainRegistry.archive = open(self.zip_location, "rb")
             self.loaded = True
             return
 
+        self.logger.debug("Loading chain registry from url")
         resp = requests.get(self.zip_url, stream=True)
 
         if resp.status_code != 200:
@@ -42,8 +45,10 @@ class ChainRegistry:
         
         self.loaded = True
         ChainRegistry.archive = io.BytesIO(resp.content)
+        self.logger.debug("Chain registry loaded")
 
     def extract(self):
+        self.logger.debug("Extracting chain registry")
         if not self.loaded:
             self.load()
 
@@ -77,6 +82,8 @@ class ChainRegistry:
         self.testnets = testnets
         self.devnets = devnets
         self.unknown = unknown
+
+        self.logger.debug("Chain registry extracted")
 
     def get_chain(self, chain):
         if chain in self.mainnets:

@@ -1,11 +1,30 @@
 import json, os
+import logging
+
+LOG_LEVEL = {
+    "CRITICAL": logging.CRITICAL,
+    "ERROR": logging.ERROR,
+    "WARNING": logging.WARNING,
+    "INFO": logging.INFO,
+    "DEBUG": logging.DEBUG,
+    "NOTSET": logging.NOTSET
+}
 
 class Config:
     def __init__(self, config_file):
         self.config_file = config_file
         self.config = self.load_config()
 
-        self.chains = {}
+        self.chains = []
+
+        if "logging" in self.config and "level" in self.config["logging"]:
+            try:
+                self.log_level = LOG_LEVEL[self.config["logging"]["level"]]
+            except KeyError:
+                raise Exception(f"Invalid log level in config, valid levels are {LOG_LEVEL.keys()}")
+        else:
+            self.log_level = logging.INFO
+
         if "chains" in self.config:
             self.chains = self.config["chains"]
 

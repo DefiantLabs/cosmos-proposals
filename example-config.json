@@ -1,0 +1,27 @@
+{
+    "chains": [
+        "secretnetwork",
+        "osmosis",
+        "nolus",
+        "crescent",
+        "akash",
+        "cosmoshub",
+        "sentinel",
+        "stargaze",
+        "omniflixhub",
+        "cosmoshub",
+        "terra",
+        "kujira",
+        "stride",
+        "injective",
+        "juno",
+        "agoric",
+        "evmos",
+        "quasar",
+        "onomy"
+    ],
+    "slack_channel_id": "<channel ID>",
+    "logging": {
+        "level": "INFO"
+    }
+}
