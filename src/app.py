@@ -8,19 +8,39 @@ from slack_sdk.errors import SlackApiError
 import time
 from concurrent.futures import ThreadPoolExecutor
 from utils.lists import chunks
+import os
 
 from log import get_configured_logger
 
+def get_app_base_env():
+    # get config file path from ENV
+    config_path = os.environ.get("CONFIG_PATH", None)
+    return {
+        "config": config_path
+    }
+
+
 def get_app_args():
     parser = argparse.ArgumentParser(description="Cosmos proposal Slack monitor")
-    parser.add_argument('--config', default='./config.json')
+    parser.add_argument('--config', default=None)
     return parser.parse_args()
 
 def main():
 
+    env_args = get_app_base_env()
+
     args = get_app_args()
 
-    config = Config(args.config)
+    config_location = "./config.json"
+
+    # prefer cli arg over env arg for config location
+    if args.config is not None:
+        config_location = args.config
+    elif env_args["config"] is not None:
+        config_location = env_args["config"]
+        
+
+    config = Config(config_location)
 
     logger = get_configured_logger(__name__, config.log_level, "")
 
