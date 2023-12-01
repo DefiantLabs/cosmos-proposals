@@ -85,26 +85,26 @@ def main():
                 
                 # check if submit time is less than the time when the channel was added to the app
                 # TODO: Possibly remove this, so that we always show any active proposals
-                if submit_time > channel.created_at:
-                    if not channel.is_proposal_notified(proposal_object._id):
-                        logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
-                        text, blocks = get_new_proposal_slack_notification(chain["chain_registry_entry"], proposal)
-                        logger.debug(f"Text: {text}")
-                        logger.debug(f"Blocks: {blocks}")
-                        try:
-                            slack_client.chat_postMessage(
-                                channel=config.slack_channel_id,
-                                text=text,
-                                blocks=blocks
-                            )
-                        except SlackApiError as e:
-                            logger.error(f"Error sending Slack notification: {e.response['error']}")
-                        else:
-                            channel.set_proposal_notified(proposal_object._id)
-                            logger.info(f"Proposal {proposal['proposal_id']} notified")
-                            time.sleep(10)
+                # if submit_time > channel.created_at:
+                if not channel.is_proposal_notified(proposal_object._id):
+                    logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
+                    text, blocks = get_new_proposal_slack_notification(chain["chain_registry_entry"], proposal)
+                    logger.debug(f"Text: {text}")
+                    logger.debug(f"Blocks: {blocks}")
+                    try:
+                        slack_client.chat_postMessage(
+                            channel=config.slack_channel_id,
+                            text=text,
+                            blocks=blocks
+                        )
+                    except SlackApiError as e:
+                        logger.error(f"Error sending Slack notification: {e.response['error']}")
                     else:
-                        logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
+                        channel.set_proposal_notified(proposal_object._id)
+                        logger.info(f"Proposal {proposal['proposal_id']} notified")
+                        time.sleep(10)
+                    # else:
+                    #     logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
                 else:
                     logger.info(f"Proposal {proposal['proposal_id']} was made before channel initialization, skipping")
 
