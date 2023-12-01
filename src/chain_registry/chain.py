@@ -7,6 +7,7 @@ import random
 from log import get_configured_logger
 from logging import INFO
 
+# TODO: to package this properly, we need to pass this as a param instead
 num_workers = int(os.environ.get("NUM_WORKERS", 10))
 
 requests.packages.urllib3.disable_warnings(
