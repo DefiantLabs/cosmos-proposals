@@ -95,7 +95,8 @@ def main():
                         slack_client.chat_postMessage(
                             channel=config.slack_channel_id,
                             text=text,
-                            blocks=blocks
+                            blocks=blocks,
+                            unfurl_links=False,
                         )
                     except SlackApiError as e:
                         logger.error(f"Error sending Slack notification: {e.response['error']}")
