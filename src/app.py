@@ -27,7 +27,7 @@ def main():
 
     mongo_db = get_mongo_database(mongo_client)
 
-    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level)
+    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level, rest_overides=config.chain_registry_rest_overides)
 
     slack_client = WebClient(token=config.slack_bot_token, logger=logger)
     

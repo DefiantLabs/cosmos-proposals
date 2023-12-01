@@ -14,7 +14,7 @@ requests.packages.urllib3.disable_warnings(
 )
 
 class Chain():
-    def __init__(self, chain_data, log_level=INFO, default_explorer="mintscan"):
+    def __init__(self, chain_data, log_level=INFO, default_explorer="mintscan", rest_overides=[]):
         self.chain_data = chain_data
         self.logger = get_configured_logger(__name__, log_level, "")
 
@@ -24,6 +24,8 @@ class Chain():
         self.explorers = chain_data["explorers"]
         self.default_explorer = default_explorer
         self.pretty_name = ""
+
+        self.rest_overides = rest_overides
 
         if "pretty_name" in chain_data:
             self.pretty_name = chain_data["pretty_name"]
@@ -86,8 +88,14 @@ class Chain():
         
     def get_active_proposals(self):
         resp = None
-        healthy_endpoints = self.get_healthy_rest_servers()
-        random.shuffle(healthy_endpoints)
+
+        if len(self.rest_overides) == 0:
+            healthy_endpoints = self.get_healthy_rest_servers()
+            random.shuffle(healthy_endpoints)
+        else:
+            self.logger.debug("Rest endpoints are overriden for chain %s with values %s", self.chain_id, self.rest_overides)
+            healthy_endpoints = self.rest_overides
+
         self.logger.debug("Attempting proposal request for chain %s with %d healthy endpoints", self.chain_id, len(healthy_endpoints))
         for endpoint in healthy_endpoints:
             self.logger.debug("Attempting proposal request for chain %s at %s", self.chain_id, endpoint)

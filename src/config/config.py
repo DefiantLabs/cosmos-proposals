@@ -32,6 +32,12 @@ class Config:
         if "chain_registry_zip_location" in self.config:
             self.chain_registry_zip_location = self.config["chain_registry_zip_location"]
 
+        self.chain_registry_rest_overides = {}
+        
+        if "chain_registry_rest_overides" in self.config:
+            self.chain_registry_rest_overides = self.config["chain_registry_rest_overides"]
+
+
         if "slack_channel_id" in self.config:
             self.slack_channel_id = self.config["slack_channel_id"]
         else:
