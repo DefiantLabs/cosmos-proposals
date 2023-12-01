@@ -83,9 +83,6 @@ def main():
 
                 logger.info(f"Proposal {proposal['proposal_id']} submit time is {submit_time}")
                 
-                # check if submit time is less than the time when the channel was added to the app
-                # TODO: Possibly remove this, so that we always show any active proposals
-                # if submit_time > channel.created_at:
                 if not channel.is_proposal_notified(proposal_object._id):
                     logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
                     text, blocks = get_new_proposal_slack_notification(chain["chain_registry_entry"], proposal)
@@ -104,10 +101,8 @@ def main():
                         channel.set_proposal_notified(proposal_object._id)
                         logger.info(f"Proposal {proposal['proposal_id']} notified")
                         time.sleep(10)
-                    # else:
-                    #     logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
                 else:
-                    logger.info(f"Proposal {proposal['proposal_id']} was made before channel initialization, skipping")
+                    logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
 
                     
 
