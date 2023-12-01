@@ -21,5 +21,15 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: dev
       ME_CONFIG_MONGODB_URL: mongodb://root:dev@mongo:27017/
 
+  app:
+    image: ghcr.io/defiantlabs/cosmos-proposals:latest
+    restart: always
+    environment:
+      SLACK_BOT_TOKEN: xoxb-3901239539381-6270410294566-QDiRTRePKcCxc0em0I6AXowx
+      MONGO_USERNAME: root
+      MONGO_PASSWORD: dev
+      MONGO_HOST: mongo
+      MONGO_PORT: 27017
+
 volumes:
   mongo_data:
