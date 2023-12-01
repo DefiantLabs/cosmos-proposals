@@ -32,4 +32,3 @@ class Chain:
             return self.get_chain_by_name(chain_name)
         else:
             return chain
-

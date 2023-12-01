@@ -51,4 +51,3 @@ class Proposal:
             return self.get_proposal_by_chain_and_id(chain_id, proposal_id)
         else:
             return proposal
-

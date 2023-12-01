@@ -48,4 +48,3 @@ class SlackChannel:
             return self.get_channel_by_id(channel_id)
         else:
             return channel
-
