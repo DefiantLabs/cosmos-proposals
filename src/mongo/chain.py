@@ -12,7 +12,7 @@ class ChainObject:
 class Chain:
     def __init__(self, mongo_db):
         self.collection = mongo_db.chains
-    
+
     def get_chain_by_name(self, chain_name):
         obj = self.collection.find_one({"chain_name": chain_name})
 
@@ -20,7 +20,7 @@ class Chain:
             return None
         else:
             return ChainObject(self.collection, obj)
-    
+
     def create_chain_by_name(self, chain_name):
         time_now = datetime.utcnow()
         self.collection.insert_one({"chain_name": chain_name, "created_at": time_now, "updated_at": time_now})
@@ -32,4 +32,4 @@ class Chain:
             return self.get_chain_by_name(chain_name)
         else:
             return chain
-        
+

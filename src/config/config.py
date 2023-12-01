@@ -41,7 +41,7 @@ class Config:
 
         if self.slack_bot_token is None:
             raise Exception("SLACK_BOT_TOKEN environment variable not set")
-        
+
         self.mongo_user = os.environ.get("MONGO_USERNAME", None)
         self.mongo_password = os.environ.get("MONGO_PASSWORD", None)
         self.mongo_host = os.environ.get("MONGO_HOST", "localhost")
@@ -49,7 +49,7 @@ class Config:
 
         if self.mongo_user is None:
             raise Exception("MONGO_USERNAME environment variable not set")
-        
+
         if self.mongo_password is None:
             raise Exception("MONGO_PASSWORD environment variable not set")
 

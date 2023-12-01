@@ -30,7 +30,7 @@ def main():
     chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level)
 
     slack_client = WebClient(token=config.slack_bot_token, logger=logger)
-    
+
     configured_channel = None
 
     for result in slack_client.conversations_list(types="public_channel, private_channel"):
@@ -41,10 +41,10 @@ def main():
 
     if configured_channel is None:
         raise Exception(f"Unable to find configured slack channel {config.slack_channel_id}")
-    
+
     if not configured_channel["is_member"]:
         raise Exception(f"Slack bot is not a member of configured slack channel {config.slack_channel_id}")
-    
+
     if configured_channel["is_archived"]:
         raise Exception(f"Configured slack channel {config.slack_channel_id} is archived")
 
@@ -82,7 +82,7 @@ def main():
                 submit_time = proposal_object.get_or_set_proposal_submit_time(datetime.strptime(proposal["submit_time"].split(".")[0], "%Y-%m-%dT%H:%M:%S"))
 
                 logger.info(f"Proposal {proposal['proposal_id']} submit time is {submit_time}")
-                
+
                 # check if submit time is less than the time when the channel was added to the app
                 # TODO: Possibly remove this, so that we always show any active proposals
                 # if submit_time > channel.created_at:
@@ -109,7 +109,7 @@ def main():
                 else:
                     logger.info(f"Proposal {proposal['proposal_id']} was made before channel initialization, skipping")
 
-                    
+
 
         logger.info("Main loop finished, sleeping")
         time.sleep(60)

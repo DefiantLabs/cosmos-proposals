@@ -36,7 +36,7 @@ class SlackChannel:
             return None
         else:
             return SlackChannelObject(self.collection, obj)
-    
+
     def create_channel_by_id(self, channel_id):
         time_now = datetime.utcnow()
         self.collection.insert_one({"channel_id": channel_id, "created_at": time_now, "updated_at": time_now})
@@ -48,4 +48,4 @@ class SlackChannel:
             return self.get_channel_by_id(channel_id)
         else:
             return channel
-        
+

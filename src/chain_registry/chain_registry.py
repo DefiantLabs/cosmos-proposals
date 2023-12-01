@@ -42,7 +42,7 @@ class ChainRegistry:
 
         if resp.status_code != 200:
             raise Exception(f"Unable to load chain registry from url {self.zip_url}")
-        
+
         self.loaded = True
         ChainRegistry.archive = io.BytesIO(resp.content)
         self.logger.debug("Chain registry loaded")

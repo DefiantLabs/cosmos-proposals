@@ -12,7 +12,7 @@ class ProposalObject:
             self.submit_time = doc["submit_time"]
         else:
             self.submit_time = None
-    
+
     def get_proposal_submit_time(self):
         return self.submit_time
 
@@ -20,7 +20,7 @@ class ProposalObject:
         time_now = datetime.utcnow()
         self.collection.update_one({"_id": self._id}, {"$set": {"updated_at": time_now, "submit_time": submit_time}})
         self.submit_time = submit_time
-    
+
     def get_or_set_proposal_submit_time(self, submit_time):
         if self.submit_time is None:
             self.set_proposal_submit_time(submit_time)
@@ -31,7 +31,7 @@ class ProposalObject:
 class Proposal:
     def __init__(self, mongo_db):
         self.collection = mongo_db.proposals
-    
+
     def get_proposal_by_chain_and_id(self, chain_id, proposal_id):
         obj = self.collection.find_one({"chain_id": chain_id, "proposal_id": proposal_id})
 
@@ -39,7 +39,7 @@ class Proposal:
             return None
         else:
             return ProposalObject(self.collection, obj)
-    
+
     def create_proposal_by_chain_and_id(self, chain_id, proposal_id):
         time_now = datetime.utcnow()
         self.collection.insert_one({"chain_id": chain_id, "proposal_id": proposal_id, "created_at": time_now, "updated_at": time_now})
@@ -51,4 +51,4 @@ class Proposal:
             return self.get_proposal_by_chain_and_id(chain_id, proposal_id)
         else:
             return proposal
-        
+

@@ -35,19 +35,19 @@ class Chain():
 
     def get_chain_id(self):
         return self.chain_id
-    
+
     def get_rpc_servers(self):
         return self.rpc_servers
-    
+
     def get_rest_servers(self):
         return self.rest_servers
-    
+
     def get_healthy_rest_servers(self):
         return self._execute_health_check(self.get_rest_servers())
-    
+
     def get_healthy_rpc_servers(self):
         return self._execute_health_check(self.get_rpc_servers())
-    
+
     def _execute_health_check(self, servers):
         with ThreadPoolExecutor(max_workers=num_workers) as executor:
             healthy_endpoints = [
@@ -74,7 +74,7 @@ class Chain():
             return False
         self.logger.debug("Chain %s endpoint %s is unhealthy due to error responses", self.chain_id, endpoint)
         return False
-        
+
     def get_explorer(self, explorer_name=None):
 
         for explorer in self.explorers:
@@ -83,7 +83,7 @@ class Chain():
             elif explorer["kind"] == self.default_explorer:
                 return explorer
         return None
-        
+
     def get_active_proposals(self):
         resp = None
         healthy_endpoints = self.get_healthy_rest_servers()
