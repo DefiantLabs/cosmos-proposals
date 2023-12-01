@@ -59,9 +59,9 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           labels: |
             maintainer=danb
-            org.opencontainers.image.source=https://github.com/defiantlabs/cosmos-upgrades
-            org.opencontainers.image.title=cosmos-upgrades
-            org.opencontainers.image.description=cosmos-upgrades
+            org.opencontainers.image.source=https://github.com/defiantlabs/cosmos-proposals
+            org.opencontainers.image.title=cosmos-proposals
+            org.opencontainers.image.description=cosmos-proposals
             org.opencontainers.image.vendor=Defiant
           tags: |
             type=sha,enable=true,prefix=sha-,suffix=,format=short,priority=1
