@@ -20,6 +20,7 @@ This application requires the following scopes:
 
 1. channels:read
 2. chat:write
+3. groups:read
 
 ### Workspace Installation
 
