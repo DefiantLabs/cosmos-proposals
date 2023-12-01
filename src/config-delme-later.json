@@ -1,0 +1,25 @@
+{
+    "chains": [
+        "agoric",
+        "akash",
+        "celestia",
+        "cosmoshub",
+        "crescent",
+        "dydx",
+        "evmos",
+        "injective",
+        "juno",
+        "nibiru",
+        "noble",
+        "nolus",
+        "omniflixhub",
+        "osmosis",
+        "quasar",
+        "sentinel",
+        "stargaze"
+    ],
+    "slack_channel_id": "C0687ET756Y",
+    "logging": {
+        "level": "INFO"
+    }
+}
