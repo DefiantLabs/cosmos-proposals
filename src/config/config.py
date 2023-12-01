@@ -61,6 +61,10 @@ class Config:
 
         self.mongo_uri = f"mongodb://{self.mongo_user}:{self.mongo_password}@{self.mongo_host}:{self.mongo_port}"
 
+        self.do_slack = True
+        if "debugging" in self.config and "do_slack" in self.config["debugging"]:
+            self.do_slack = self.config["debugging"]["do_slack"]
+
     def load_config(self):
         with open(self.config_file) as f:
             return json.load(f)

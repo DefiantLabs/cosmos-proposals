@@ -29,24 +29,25 @@ def main():
 
     chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level, rest_overides=config.chain_registry_rest_overides)
 
-    slack_client = WebClient(token=config.slack_bot_token, logger=logger)
-    
-    configured_channel = None
+    if config.do_slack:
+        slack_client = WebClient(token=config.slack_bot_token, logger=logger)
+        
+        configured_channel = None
 
-    for result in slack_client.conversations_list(types="public_channel, private_channel"):
-        for channel in result["channels"]:
-            if channel["id"] == config.slack_channel_id:
-                configured_channel = channel
-                break
+        for result in slack_client.conversations_list(types="public_channel, private_channel"):
+            for channel in result["channels"]:
+                if channel["id"] == config.slack_channel_id:
+                    configured_channel = channel
+                    break
 
-    if configured_channel is None:
-        raise Exception(f"Unable to find configured slack channel {config.slack_channel_id}")
-    
-    if not configured_channel["is_member"]:
-        raise Exception(f"Slack bot is not a member of configured slack channel {config.slack_channel_id}")
-    
-    if configured_channel["is_archived"]:
-        raise Exception(f"Configured slack channel {config.slack_channel_id} is archived")
+        if configured_channel is None:
+            raise Exception(f"Unable to find configured slack channel {config.slack_channel_id}")
+        
+        if not configured_channel["is_member"]:
+            raise Exception(f"Slack bot is not a member of configured slack channel {config.slack_channel_id}")
+        
+        if configured_channel["is_archived"]:
+            raise Exception(f"Configured slack channel {config.slack_channel_id} is archived")
 
     channel = SlackChannel(mongo_db).find_or_create_channel_by_id(config.slack_channel_id)
 
@@ -89,12 +90,13 @@ def main():
                     logger.debug(f"Text: {text}")
                     logger.debug(f"Blocks: {blocks}")
                     try:
-                        slack_client.chat_postMessage(
-                            channel=config.slack_channel_id,
-                            text=text,
-                            blocks=blocks,
-                            unfurl_links=False,
-                        )
+                        if config.do_slack:
+                            slack_client.chat_postMessage(
+                                channel=config.slack_channel_id,
+                                text=text,
+                                blocks=blocks,
+                                unfurl_links=False,
+                            )
                     except SlackApiError as e:
                         logger.error(f"Error sending Slack notification: {e.response['error']}")
                     else:
