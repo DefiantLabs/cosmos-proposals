@@ -32,6 +32,12 @@ class Config:
         if "chain_registry_zip_location" in self.config:
             self.chain_registry_zip_location = self.config["chain_registry_zip_location"]
 
+        self.chain_registry_rest_overides = {}
+        
+        if "chain_registry_rest_overides" in self.config:
+            self.chain_registry_rest_overides = self.config["chain_registry_rest_overides"]
+
+
         if "slack_channel_id" in self.config:
             self.slack_channel_id = self.config["slack_channel_id"]
         else:
@@ -54,6 +60,21 @@ class Config:
             raise Exception("MONGO_PASSWORD environment variable not set")
 
         self.mongo_uri = f"mongodb://{self.mongo_user}:{self.mongo_password}@{self.mongo_host}:{self.mongo_port}"
+
+        self.do_slack = True
+        if "debugging" in self.config and "do_slack" in self.config["debugging"]:
+            self.do_slack = self.config["debugging"]["do_slack"]
+
+        self.main_loop = {
+            "sleep_time": 60.0,
+            "proposal_workers": 10
+        }
+
+        if "main_loop" in self.config:
+            if "sleep_time" in self.config["main_loop"]:
+                self.main_loop["sleep_time"] = float(self.config["main_loop"]["sleep_time"])
+            if "proposal_workers" in self.config["main_loop"]:
+                self.main_loop["proposal_workers"] = int(self.config["main_loop"]["proposal_workers"])
 
     def load_config(self):
         with open(self.config_file) as f:

@@ -9,13 +9,16 @@ class ChainRegistry:
 
     archive = None
 
-    def __init__(self, zip_url="https://github.com/cosmos/chain-registry/archive/refs/heads/master.zip", zip_location=None, log_level=INFO):
+    def __init__(self, zip_url="https://github.com/cosmos/chain-registry/archive/refs/heads/master.zip", zip_location=None, log_level=INFO, rest_overides={}):
         self.zip_url = zip_url
         self.loaded = False
         self.archive_contents = None
         self.zip_location = zip_location
         self.log_level = log_level
         self.logger = get_configured_logger(__name__, self.log_level, "")
+
+        self.rest_overides = rest_overides
+
         self.mainnets = {}
         self.testnets = {}
         self.devnets = {}
@@ -62,18 +65,24 @@ class ChainRegistry:
             chain = json.load(self.archive.openbin(path))
             chain_path = path.split("/")[-2]
 
+            rest_overides = []
+
+            if chain["chain_id"] in self.rest_overides:
+                rest_overides = self.rest_overides[chain["chain_id"]]
+
             # can chains have other statuses that are okay?
             if chain["status"] not in ["live"]:
                 continue
             try:
+                new_chain = Chain(chain, self.log_level, rest_overides=rest_overides)
                 if chain["network_type"] == "mainnet":
-                    mainnets[chain_path] = Chain(chain, self.log_level)
+                    mainnets[chain_path] = new_chain
                 elif chain["network_type"] == "testnet":
-                    testnets[chain_path] = Chain(chain, self.log_level)
+                    testnets[chain_path] = new_chain
                 elif chain["network_type"] == "devnet":
-                    devnets[chain_path] = Chain(chain, self.log_level)
+                    devnets[chain_path] = new_chain
                 else:
-                    unknown[chain_path] = Chain(chain, self.log_level)
+                    unknown[chain_path] = new_chain
             except:
                 self.logger.error(f"Unable to extract chain information for {chain_path}")
                 continue
@@ -86,6 +95,16 @@ class ChainRegistry:
         self.logger.debug("Chain registry extracted")
 
     def get_chain(self, chain):
+        chain_entry = self.get_chain_by_registry_name(chain)
+        if chain_entry is not None:
+            return chain_entry
+        else:
+            chain_entry = self.search_for_chain_by_chain_id(chain)
+            if chain_entry is not None:
+                return chain_entry
+            raise Exception(f"Chain {chain} not found in registry")
+
+    def get_chain_by_registry_name(self, chain):
         if chain in self.mainnets:
             return self.mainnets[chain]
         elif chain in self.testnets:
@@ -94,5 +113,19 @@ class ChainRegistry:
             return self.devnets[chain]
         elif chain in self.unknown:
             return self.unknown[chain]
-        else:
-            raise Exception(f"Chain {chain} not found in registry")
+        return None
+
+    def search_for_chain_by_chain_id(self, chain):
+        for chain_entry in self.mainnets.values():
+            if chain_entry.chain_id == chain:
+                return chain_entry
+        for chain_entry in self.testnets.values():
+            if chain_entry.chain_id == chain:
+                return chain_entry
+        for chain_entry in self.devnets.values():
+            if chain_entry.chain_id == chain:
+                return chain_entry
+        for chain_entry in self.unknown.values():
+            if chain_entry.chain_id == chain:
+                return chain_entry
+        return None
