@@ -74,7 +74,11 @@ def main():
 
     chains = {}
     for chain in config.chains:
-        chain_registry_entry = chain_registry.get_chain(chain)
+        try:
+            chain_registry_entry = chain_registry.get_chain(chain)
+        except:
+            logger.error(f"Unable to find chain {chain} in chain registry")
+            continue
         chain_object = Chain(mongo_db).find_or_create_chain_by_name(chain)
         chains[chain] = {
             "chain_registry_entry": chain_registry_entry,

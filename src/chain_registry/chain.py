@@ -69,7 +69,7 @@ class Chain():
             if response.status_code == 200:
                 self.logger.debug("Chain %s endpoint %s is healthy from /node_info request", self.chain_id, endpoint)
                 return True
-            response = requests.get(f"{endpoint}/cosmos/gov/v1beta1/proposals", timeout=3, verify=False)
+            response = requests.get(f"{endpoint}/cosmos/gov/v1beta1/proposals?proposal_status=2", timeout=3, verify=False)
             if response.status_code == 200:
                 self.logger.debug("Chain %s endpoint %s is healthy from /cosmos/gov/v1beta1/proposals request", self.chain_id, endpoint)
                 return True

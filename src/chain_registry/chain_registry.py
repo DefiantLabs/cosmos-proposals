@@ -67,7 +67,9 @@ class ChainRegistry:
 
             rest_overides = []
 
-            if chain["chain_id"] in self.rest_overides:
+            if chain_path in self.rest_overides:
+                rest_overides = self.rest_overides[chain_path]
+            elif chain["chain_id"] in self.rest_overides:
                 rest_overides = self.rest_overides[chain["chain_id"]]
 
             # can chains have other statuses that are okay?
