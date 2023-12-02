@@ -104,7 +104,7 @@ def main():
 
             for response in responses:
                 if response["error"] is not None:
-                    logger.error(f"Unable to get active proposals for chain {response['chain'][0]}")
+                    logger.error(f"Unable to get active proposals for chain {response['chain_name']}")
                     logger.error(f"Error: {response['error']}")
                     continue
 
@@ -128,11 +128,19 @@ def main():
                         text, blocks = get_new_proposal_slack_notification(chain_registry_entry, proposal)
                         logger.debug(f"Text: {text}")
                         logger.debug(f"Blocks: {blocks}")
+
+                        first_reply_text, first_reply_blocks = get_new_proposal_slack_first_reply(chain_registry_entry, proposal)
+
+                        logger.debug(f"First reply text: {first_reply_text}")
+                        logger.debug(f"First reply blocks: {first_reply_blocks}")
+
                         notifications_needed.append({
                             "proposal_id": proposal["proposal_id"],
                             "proposal_object": proposal_object,
                             "text": text,
                             "blocks": blocks,
+                            "first_reply_text": first_reply_text,
+                            "first_reply_blocks": first_reply_blocks,
                             "chain_registry_entry": chain_registry_entry,
                             "chain_object": chain_object,
                             "chain_name": chain_name
@@ -148,9 +156,11 @@ def main():
                 chain_name = notification["chain_registry_entry"].pretty_name
                 chain_id = notification["chain_registry_entry"].chain_id
                 logger.info(f"Sending notification for proposal {notification['proposal_id']} on chain {chain_name} ({chain_id})")
+
+                resp = None
                 try:
                     if config.do_slack:
-                        slack_client.chat_postMessage(
+                        resp = slack_client.chat_postMessage(
                             channel=config.slack_channel_id,
                             text=notification["text"],
                             blocks=notification["blocks"],
@@ -159,6 +169,18 @@ def main():
                 except SlackApiError as e:
                     logger.error(f"Error sending Slack notification: {e.response['error']}")
                 else:
+                    if config.do_slack and resp is not None and resp["ok"] and len(notification["first_reply_blocks"]) != 0:
+                        try:
+                            slack_client.chat_postMessage(
+                                channel=config.slack_channel_id,
+                                text=notification["first_reply_text"],
+                                blocks=notification["first_reply_blocks"],
+                                unfurl_links=False,
+                                thread_ts=resp["ts"]
+                            )
+                        except SlackApiError as e:
+                            logger.error(f"Error sending Slack first reply notification: {e.response['error']}")
+
                     channel.set_proposal_notified(notification["proposal_object"]._id)
                     logger.info(f"Proposal {notification['proposal_id']} notified")
                     time.sleep(10)
@@ -177,6 +199,40 @@ def get_chain_active_proposals(chain_name: str, chain_registry_entry: ChainRegis
         return {"error": e, "active_proposals": None, "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
 
 def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain, proposal):
+
+    chain_name = chain_registry_entry.pretty_name
+    chain_id = chain_registry_entry.chain_id
+
+    try:
+        title = proposal['content']['title']
+    except:
+        title = f"No title (Type is {proposal['content']['@type']})"
+
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": f":mega: New Proposal on {chain_name} ({chain_id})"
+		    }
+	    },
+        {
+			"type": "divider"
+		},
+        {
+			"type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"#{proposal['proposal_id']}. {title}"
+            }
+        }
+    ]
+
+    text = f"New proposal on {chain_name} ({chain_id}): #{proposal['proposal_id']}. {title}"
+
+    return text, blocks
+
+def get_new_proposal_slack_first_reply(chain_registry_entry: ChainRegistryChain, proposal):
 
     mintscan_chain_explorer = chain_registry_entry.get_explorer(explorer_name="mintscan")
 
@@ -200,61 +256,77 @@ def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain
                 "text": f"<{explorer_url}|View on Ping.pub>"
             }
         }
+    elif chain_registry_entry.chain_id == "kaiyo-1":
+        explorer_url = f"https://blue.kujira.network/govern/{proposal['proposal_id']}"
+        explorer_link = {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<{explorer_url}|View on Kujira Blue>"
+            }
+        }
 
-    chain_name = chain_registry_entry.pretty_name
-    chain_id = chain_registry_entry.chain_id
-
-    try:
-        title = proposal['content']['title']
-    except:
-        title = f"No title (Type is {proposal['content']['@type']})"
 
     description = ""
     try:
         description = proposal['content']['description']
 
         if len(description) > 300:
-            description = description[:300] + "..."
+            description = description[:300].strip() + "..."
     except:
         pass
 
     blocks = [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": f":mega: New proposal on {chain_name} ({chain_id})"
-		    }
-	    },
-        {
-			"type": "divider"
-		},
-        {
-			"type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"#{proposal['proposal_id']}. {title}"
-            }
-        },
+
     ]
 
     if description != "":
-        blocks.append({
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": description
-            }
-        })
-
+        blocks += parse_description_to_blocks(description)
 
     if explorer_link is not None:
         blocks.append(explorer_link)
 
-    text = f"New proposal on {chain_name} ({chain_id}): #{proposal['proposal_id']}. {title}"
+    if description == "" and explorer_link is None:
+        return "", blocks
+    elif description != "" and explorer_link is None:
+        return f"{description}", blocks
+    else:
+        return f"{description}\n\n{explorer_url}", blocks
 
-    return text, blocks
+def parse_description_to_blocks(description: str):
+    description_blocks = []
 
+    if "\\n" in description:
+        description_lines = description.split("\\n")
+    else:
+        description_lines = description.split("\n")
+
+    for line in description_lines:
+        if line == "":
+            continue
+        description_blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": line.strip()
+                }
+            }
+        )
+
+    if len(description_blocks) > 50:
+        description_blocks = description_blocks[:49]
+        description_blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "..."
+                }
+            }
+        )
+
+    return description_blocks
 
 if __name__ == '__main__':
     main()
