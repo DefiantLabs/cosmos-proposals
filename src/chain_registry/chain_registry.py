@@ -67,9 +67,6 @@ class ChainRegistry:
 
             rest_overides = []
 
-            if chain["chain_id"] == "secret-4":
-                print("Hello")
-
             if chain["chain_id"] in self.rest_overides:
                 rest_overides = self.rest_overides[chain["chain_id"]]
 
@@ -98,6 +95,16 @@ class ChainRegistry:
         self.logger.debug("Chain registry extracted")
 
     def get_chain(self, chain):
+        chain_entry = self.get_chain_by_registry_name(chain)
+        if chain_entry is not None:
+            return chain_entry
+        else:
+            chain_entry = self.search_for_chain_by_chain_id(chain)
+            if chain_entry is not None:
+                return chain_entry
+            raise Exception(f"Chain {chain} not found in registry")
+
+    def get_chain_by_registry_name(self, chain):
         if chain in self.mainnets:
             return self.mainnets[chain]
         elif chain in self.testnets:
@@ -106,5 +113,19 @@ class ChainRegistry:
             return self.devnets[chain]
         elif chain in self.unknown:
             return self.unknown[chain]
-        else:
-            raise Exception(f"Chain {chain} not found in registry")
+        return None
+
+    def search_for_chain_by_chain_id(self, chain):
+        for chain_entry in self.mainnets.values():
+            if chain_entry.chain_id == chain:
+                return chain_entry
+        for chain_entry in self.testnets.values():
+            if chain_entry.chain_id == chain:
+                return chain_entry
+        for chain_entry in self.devnets.values():
+            if chain_entry.chain_id == chain:
+                return chain_entry
+        for chain_entry in self.unknown.values():
+            if chain_entry.chain_id == chain:
+                return chain_entry
+        return None

@@ -17,9 +17,10 @@ requests.packages.urllib3.disable_warnings(
 class Chain():
     def __init__(self, chain_data, log_level=INFO, default_explorer="mintscan", rest_overides=[]):
         self.chain_data = chain_data
-        self.logger = get_configured_logger(__name__, log_level, "")
 
         self.chain_id = chain_data["chain_id"]
+        self.logger = get_configured_logger(__name__ + f" ({self.chain_id})", log_level, "")
+
         self.rpc_servers = list(map(lambda x: x["address"], chain_data["apis"]["rpc"]))
         self.rest_servers = list(map(lambda x: x["address"], chain_data["apis"]["rest"]))
         self.explorers = chain_data["explorers"]
@@ -104,6 +105,7 @@ class Chain():
                 response = requests.get(
                     f"{endpoint}/cosmos/gov/v1beta1/proposals?proposal_status=2",
                     verify=False,
+                    timeout=10
                 )
             except Exception as e:
                 self.logger.debug("Proposal request failed for chain %s at %s: %s", self.chain_id, endpoint, e)

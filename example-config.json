@@ -23,5 +23,12 @@
     "slack_channel_id": "<channel ID>",
     "logging": {
         "level": "INFO"
+    },
+    "main_loop": {
+        "proposal_workers": 10,
+        "sleep_time": 60
+    },
+    "chain_registry_rest_overides": {
+        "secret-4": ["<REST URL for Secret Node here>"]
     }
 }
