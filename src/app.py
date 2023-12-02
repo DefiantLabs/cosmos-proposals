@@ -94,9 +94,13 @@ def main():
         # The number of threads is set in the config
         # This is better optimized since the active proposal data requests are IO heavy and not CPU heavy
         for chunk in chunks(list(chains.items()), config.main_loop["proposal_workers"]):
-            logger.info(f"Requesting active proposals for {list(map(lambda chain: chain[0], chunk))}")
+            logger.info(f"Requesting active proposals for chain chunk {list(map(lambda chain: chain[0], chunk))}")
             with ThreadPoolExecutor(max_workers=config.main_loop["proposal_workers"]) as executor:
-                responses = list(executor.map(get_chain_active_proposals, chunk))
+                executions = []
+                for chain in chunk:
+                    logger.debug(f"Submitting active proposals job for chain {chain[0]}")
+                    executions.append(executor.submit(get_chain_active_proposals, chain[0], chain[1]["chain_registry_entry"], chain[1]["chain_object"]))
+                responses = [execution.result() for execution in executions]
 
             for response in responses:
                 if response["error"] is not None:
@@ -105,11 +109,10 @@ def main():
                     continue
 
                 active_proposals = response["active_proposals"]
-                chain_name = response["chain"][0]
-                chain = response["chain"][1]
+                chain_name = response["chain_name"]
 
-                chain_registry_entry = chain["chain_registry_entry"]
-                chain_object = chain["chain_object"]
+                chain_registry_entry = response["chain_registry_entry"]
+                chain_object = response["chain_object"]
 
                 for proposal in active_proposals["proposals"]:
 
@@ -128,46 +131,50 @@ def main():
                         notifications_needed.append({
                             "proposal_id": proposal["proposal_id"],
                             "proposal_object": proposal_object,
-                            "chain": chain,
                             "text": text,
-                            "blocks": blocks
+                            "blocks": blocks,
+                            "chain_registry_entry": chain_registry_entry,
+                            "chain_object": chain_object,
+                            "chain_name": chain_name
                         })
                         
                     else:
                         logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
 
-        for notification in notifications_needed:
-            chain = notification["chain"]
-            chain_name = chain["chain_registry_entry"].pretty_name
-            chain_id = chain["chain_registry_entry"].chain_id
-            logger.info(f"Sending notification for proposal {notification['proposal_id']} on chain {chain_name} ({chain_id})")
-            try:
-                if config.do_slack:
-                    slack_client.chat_postMessage(
-                        channel=config.slack_channel_id,
-                        text=notification["text"],
-                        blocks=notification["blocks"],
-                        unfurl_links=False,
-                    )
-            except SlackApiError as e:
-                logger.error(f"Error sending Slack notification: {e.response['error']}")
-            else:
-                channel.set_proposal_notified(notification["proposal_object"]._id)
-                logger.info(f"Proposal {notification['proposal_id']} notified")
-                time.sleep(10)
+        if len(notifications_needed) == 0:
+            logger.info("No new proposal notifications needed")
+        else:
+            for notification in notifications_needed:
+                chain_name = notification["chain_registry_entry"].pretty_name
+                chain_id = notification["chain_registry_entry"].chain_id
+                logger.info(f"Sending notification for proposal {notification['proposal_id']} on chain {chain_name} ({chain_id})")
+                try:
+                    if config.do_slack:
+                        slack_client.chat_postMessage(
+                            channel=config.slack_channel_id,
+                            text=notification["text"],
+                            blocks=notification["blocks"],
+                            unfurl_links=False,
+                        )
+                except SlackApiError as e:
+                    logger.error(f"Error sending Slack notification: {e.response['error']}")
+                else:
+                    channel.set_proposal_notified(notification["proposal_object"]._id)
+                    logger.info(f"Proposal {notification['proposal_id']} notified")
+                    time.sleep(10)
 
         loop_end_time = time.time()
         loop_time = loop_end_time - loop_start_time
 
-        logger.info(f"Main loop finished in {loop_time} seconds, sleeping for {config.main_loop['sleep_time']} seconds")
+        logger.info(f"Main loop finished in {round(loop_time, 2)} seconds, sleeping for {config.main_loop['sleep_time']} seconds")
 
         time.sleep(config.main_loop["sleep_time"])
 
-def get_chain_active_proposals(chain):
+def get_chain_active_proposals(chain_name: str, chain_registry_entry: ChainRegistryChain, chain_object: Chain):
     try:
-        return {"error": None, "active_proposals": chain[1]["chain_registry_entry"].get_active_proposals(), "chain": chain}
+        return {"error": None, "active_proposals": chain_registry_entry.get_active_proposals(), "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
     except Exception as e:
-        return {"error": e, "active_proposals": None, "chain": chain}
+        return {"error": e, "active_proposals": None, "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
 
 def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain, proposal):
 
