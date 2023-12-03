@@ -1,0 +1,94 @@
+syntax = "proto3";
+package cosmos.gov.v1beta1;
+
+import "cosmos/base/pagination.proto";
+import "cosmos/base/coin.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+// ProposalStatus enumerates the valid statuses of a proposal.
+enum ProposalStatus {
+    // PROPOSAL_STATUS_UNSPECIFIED defines the default proposal status.
+    PROPOSAL_STATUS_UNSPECIFIED = 0;
+    // PROPOSAL_STATUS_DEPOSIT_PERIOD defines a proposal status during the deposit
+    // period.
+    PROPOSAL_STATUS_DEPOSIT_PERIOD = 1;
+    // PROPOSAL_STATUS_VOTING_PERIOD defines a proposal status during the voting
+    // period.
+    PROPOSAL_STATUS_VOTING_PERIOD = 2;
+    // PROPOSAL_STATUS_PASSED defines a proposal status of a proposal that has
+    // passed.
+    PROPOSAL_STATUS_PASSED = 3;
+    // PROPOSAL_STATUS_REJECTED defines a proposal status of a proposal that has
+    // been rejected.
+    PROPOSAL_STATUS_REJECTED = 4;
+    // PROPOSAL_STATUS_FAILED defines a proposal status of a proposal that has
+    // failed.
+    PROPOSAL_STATUS_FAILED = 5;
+}
+
+message TallyResult {
+  // yes is the number of yes votes on a proposal.
+  string yes = 1;
+
+  // abstain is the number of abstain votes on a proposal.
+  string abstain = 2;
+
+  // no is the number of no votes on a proposal.
+  string no = 3;
+
+  // no_with_veto is the number of no with veto votes on a proposal.
+  string no_with_veto = 4;
+}
+
+message Proposal {
+
+  // proposal_id defines the unique id of the proposal.
+  uint64              proposal_id = 1;
+
+  // content is the proposal's content.
+  google.protobuf.Any content = 2;
+  // status defines the proposal status.
+  ProposalStatus      status      = 3;
+  
+  // final_tally_result is the final tally result of the proposal. When
+  // querying a proposal via gRPC, this field is not populated until the
+  // proposal's voting period has ended.
+  TallyResult               final_tally_result = 4;
+  
+  // submit_time is the time of proposal submission.
+  google.protobuf.Timestamp submit_time        = 5;
+  
+  // deposit_end_time is the end time for deposition.
+  google.protobuf.Timestamp deposit_end_time = 6;
+  
+  // total_deposit is the total deposit on the proposal.
+  repeated cosmos.base.Coin total_deposit = 7;
+
+  // voting_start_time is the starting time to vote on a proposal.
+  google.protobuf.Timestamp voting_start_time = 8;
+  
+  // voting_end_time is the end time of voting on a proposal.
+  google.protobuf.Timestamp voting_end_time = 9;
+}
+
+message QueryProposalsResponse {
+  repeated Proposal proposals = 1;
+
+  // pagination defines the pagination in the response.
+  cosmos.base.PageResponse pagination = 2;
+}
+
+message QueryProposalsRequest {
+    // proposal_status defines the status of the proposals.
+    ProposalStatus proposal_status = 1;
+  
+    // voter defines the voter address for the proposals.
+    string voter = 2;
+  
+    // depositor defines the deposit addresses from the proposals.
+    string depositor = 3;
+  
+    // pagination defines an optional pagination for the request.
+    cosmos.base.PageRequest pagination = 4;
+}
