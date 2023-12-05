@@ -17,7 +17,7 @@ def request_active_proposals(server):
         }
     }
 
-    resp = requests.post(server, json=blob)
+    resp = requests.post(server, json=blob, timeout=5)
 
     resp.raise_for_status()
 

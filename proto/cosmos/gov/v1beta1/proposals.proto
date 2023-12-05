@@ -1,0 +1,94 @@
+syntax = "proto3";
+package cosmos.gov.v1beta1;
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "cosmos/base/coin.proto";
+
+message TextProposal {
+    // title of the proposal.
+    string title = 1;
+  
+    // description associated with the proposal.
+    string description = 2;
+}
+
+message Plan {
+    // Sets the name for the upgrade. This name will be used by the upgraded
+    // version of the software to apply any special "on-upgrade" commands during
+    // the first BeginBlock method after the upgrade is applied. It is also used
+    // to detect whether a software version can handle a given upgrade. If no
+    // upgrade handler with this name has been set in the software, it will be
+    // assumed that the software is out-of-date when the upgrade Time or Height is
+    // reached and the software will exit.
+    string name = 1;
+  
+    // Deprecated: Time based upgrades have been deprecated. Time based upgrade logic
+    // has been removed from the SDK.
+    // If this field is not empty, an error will be thrown.
+    google.protobuf.Timestamp time = 2;
+  
+    // The height at which the upgrade must be performed.
+    int64 height = 3;
+  
+    // Any application specific upgrade info to be included on-chain
+    // such as a git commit that validators could automatically upgrade to
+    string info = 4;
+  
+    // Deprecated: UpgradedClientState field has been deprecated. IBC upgrade logic has been
+    // moved to the IBC module in the sub module 02-client.
+    // If this field is not empty, an error will be thrown.
+    google.protobuf.Any upgraded_client_state = 5 [deprecated = true];
+}
+
+message SoftwareUpgradeProposal {
+    // title of the proposal
+    string title = 1;
+  
+    // description of the proposal
+    string description = 2;
+  
+    // plan of the proposal
+    Plan plan = 3;
+}
+
+message MsgExecuteContract {
+    // Sender is the that actor that signed the messages
+    string sender = 1;
+    // Contract is the address of the smart contract
+    string contract = 2;
+    // Msg json encoded message to be passed to the contract
+    bytes msg = 3;
+    // Funds coins that are transferred to the contract on execution
+    repeated cosmos.base.Coin funds = 5;
+}
+
+message CommunityPoolSpendProposal {
+    string   title                           = 1;
+    string   description                     = 2;
+    string   recipient                       = 3;
+    repeated cosmos.base.Coin amount         = 4;
+}
+
+message ParameterChangeProposal {
+    string               title       = 1;
+    string               description = 2;
+    repeated ParamChange changes     = 3;
+}
+
+message ParamChange {
+    string subspace = 1;
+    string key      = 2;
+    string value    = 3;
+}
+
+message ClientUpdateProposal {
+    // the title of the update proposal
+    string title = 1;
+    // the description of the proposal
+    string description = 2;
+    // the client identifier for the client to be updated if the proposal passes
+    string subject_client_id = 3;
+    // the substitute client identifier for the client standing in for the subject
+    // client
+    string substitute_client_id = 4;
+}
