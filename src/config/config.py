@@ -38,11 +38,10 @@ class Config:
             self.chain_registry_rest_overides = self.config["chain_registry_rest_overides"]
 
 
-        if "slack_channel_id" in self.config:
-            self.slack_channel_id = self.config["slack_channel_id"]
-        else:
-            raise Exception("slack_channel_id not set in config")
-
+        self.slack_channel_id = os.environ.get("SLACK_CHANNEL_ID", None)
+        if self.slack_channel_id is None:
+            raise Exception("SLACK_CHANNEL_ID environment variable not set")
+        
         self.slack_bot_token = os.environ.get("SLACK_BOT_TOKEN", None)
 
         if self.slack_bot_token is None:

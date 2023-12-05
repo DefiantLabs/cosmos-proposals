@@ -20,7 +20,6 @@
         "quasar",
         "onomy"
     ],
-    "slack_channel_id": "<channel ID>",
     "logging": {
         "level": "INFO"
     },
