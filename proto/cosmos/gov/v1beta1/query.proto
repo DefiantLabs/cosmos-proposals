@@ -92,3 +92,13 @@ message QueryProposalsRequest {
     // pagination defines an optional pagination for the request.
     cosmos.base.PageRequest pagination = 4;
 }
+
+message QueryProposalRequest {
+  // proposal_id defines the unique id of the proposal.
+  uint64 proposal_id = 1;
+}
+
+message QueryProposalResponse {
+  // proposal is the requested governance proposal.
+  Proposal proposal = 1;
+}

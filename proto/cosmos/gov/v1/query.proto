@@ -1,0 +1,137 @@
+// Since: cosmos-sdk 0.46
+syntax = "proto3";
+package cosmos.gov.v1;
+
+import "cosmos/base/pagination.proto";
+import "cosmos/base/coin.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+enum ProposalStatus {
+    // PROPOSAL_STATUS_UNSPECIFIED defines the default proposal status.
+    PROPOSAL_STATUS_UNSPECIFIED = 0;
+    // PROPOSAL_STATUS_DEPOSIT_PERIOD defines a proposal status during the deposit
+    // period.
+    PROPOSAL_STATUS_DEPOSIT_PERIOD = 1;
+    // PROPOSAL_STATUS_VOTING_PERIOD defines a proposal status during the voting
+    // period.
+    PROPOSAL_STATUS_VOTING_PERIOD = 2;
+    // PROPOSAL_STATUS_PASSED defines a proposal status of a proposal that has
+    // passed.
+    PROPOSAL_STATUS_PASSED = 3;
+    // PROPOSAL_STATUS_REJECTED defines a proposal status of a proposal that has
+    // been rejected.
+    PROPOSAL_STATUS_REJECTED = 4;
+    // PROPOSAL_STATUS_FAILED defines a proposal status of a proposal that has
+    // failed.
+    PROPOSAL_STATUS_FAILED = 5;
+}
+
+message TallyResult {
+    // yes_count is the number of yes votes on a proposal.
+    string yes_count = 1;
+    // abstain_count is the number of abstain votes on a proposal.
+    string abstain_count = 2;
+    // no_count is the number of no votes on a proposal.
+    string no_count = 3;
+    // no_with_veto_count is the number of no with veto votes on a proposal.
+    string no_with_veto_count = 4 ;
+}
+
+message Proposal {
+    // id defines the unique id of the proposal.
+    uint64 id = 1;
+  
+    // messages are the arbitrary messages to be executed if the proposal passes.
+    repeated google.protobuf.Any messages = 2;
+  
+    // status defines the proposal status.
+    ProposalStatus status = 3;
+  
+    // final_tally_result is the final tally result of the proposal. When
+    // querying a proposal via gRPC, this field is not populated until the
+    // proposal's voting period has ended.
+    TallyResult final_tally_result = 4;
+  
+    // submit_time is the time of proposal submission.
+    google.protobuf.Timestamp submit_time = 5;
+  
+    // deposit_end_time is the end time for deposition.
+    google.protobuf.Timestamp deposit_end_time = 6;
+  
+    // total_deposit is the total deposit on the proposal.
+    repeated cosmos.base.Coin total_deposit = 7;
+  
+    // voting_start_time is the starting time to vote on a proposal.
+    google.protobuf.Timestamp voting_start_time = 8;
+  
+    // voting_end_time is the end time of voting on a proposal.
+    google.protobuf.Timestamp voting_end_time = 9;
+  
+    // metadata is any arbitrary metadata attached to the proposal.
+    // the recommended format of the metadata is to be found here:
+    // https://docs.cosmos.network/v0.47/modules/gov#proposal-3
+    string metadata = 10;
+  
+    // title is the title of the proposal
+    //
+    // Since: cosmos-sdk 0.47
+    string title = 11;
+  
+    // summary is a short summary of the proposal
+    //
+    // Since: cosmos-sdk 0.47
+    string summary = 12;
+  
+    // proposer is the address of the proposal sumbitter
+    //
+    // Since: cosmos-sdk 0.47
+    string proposer = 13;
+  
+    // expedited defines if the proposal is expedited
+    //
+    // Since: cosmos-sdk 0.50
+    bool expedited = 14;
+  
+    // failed_reason defines the reason why the proposal failed
+    //
+    // Since: cosmos-sdk 0.50
+    string failed_reason = 15;
+}
+
+// QueryProposalRequest is the request type for the Query/Proposal RPC method.
+message QueryProposalRequest {
+  // proposal_id defines the unique id of the proposal.
+  uint64 proposal_id = 1;
+}
+
+// QueryProposalResponse is the response type for the Query/Proposal RPC method.
+message QueryProposalResponse {
+  // proposal is the requested governance proposal.
+  Proposal proposal = 1;
+}
+
+// QueryProposalsRequest is the request type for the Query/Proposals RPC method.
+message QueryProposalsRequest {
+  // proposal_status defines the status of the proposals.
+  ProposalStatus proposal_status = 1;
+
+  // voter defines the voter address for the proposals.
+  string voter = 2;
+
+  // depositor defines the deposit addresses from the proposals.
+  string depositor = 3;
+
+  // pagination defines an optional pagination for the request.
+  cosmos.base.PageRequest pagination = 4;
+}
+
+// QueryProposalsResponse is the response type for the Query/Proposals RPC
+// method.
+message QueryProposalsResponse {
+  // proposals defines all the requested governance proposals.
+  repeated Proposal proposals = 1;
+
+  // pagination defines the pagination in the response.
+  cosmos.base.PageResponse pagination = 2;
+}

@@ -1,4 +1,4 @@
-from rpc.requests import request_active_proposals
+from rpc.requests import request_active_proposals, request_proposals_by_proposal_id, request_active_proposals_v1
 from chain_registry.chain_registry import ChainRegistry
 import time
 from cosmos.gov.v1beta1.proposals_pb2 import TextProposal, SoftwareUpgradeProposal, MsgExecuteContract
@@ -29,6 +29,7 @@ def main():
     for chain in chains:
         rpc_servers = chain_registry.get_chain(chain).get_rpc_servers()
 
+        print("Testing v1beta1 requests")
         if len(rpc_servers) != 0:
             print(chain)
             random.shuffle(rpc_servers)
@@ -41,12 +42,24 @@ def main():
                 except:
                     print("Error with chain: " + chain + " and rpc server: " + rpc_server)
                     continue
+            
 
-            for proposal in active_proposals.proposals:
-                proposal_type = proposal.content.type_url
-                proposal_data = proposal.content.value
-                proposal_proto = proposal_registry.get_proposal(proposal_type)()
-                proposal_proto.ParseFromString(proposal_data)
-                
+        print("Testing v1 requests")
+        if len(rpc_servers) != 0:
+            print(chain)
+            random.shuffle(rpc_servers)
+
+            active_proposals = None
+            for rpc_server in rpc_servers:
+                try:
+                    active_proposals = request_active_proposals_v1(rpc_server)
+                    break
+                except Exception as err:
+                    print("Error with chain: " + chain + " and rpc server: " + rpc_server)
+                    print(err)
+                    continue
+            
+            print(active_proposals)
+
 
 main()

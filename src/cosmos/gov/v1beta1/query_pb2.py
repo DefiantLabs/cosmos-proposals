@@ -18,15 +18,15 @@ from google.protobuf import any_pb2 as google_dot_protobuf_dot_any__pb2
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1e\x63osmos/gov/v1beta1/query.proto\x12\x12\x63osmos.gov.v1beta1\x1a\x1c\x63osmos/base/pagination.proto\x1a\x16\x63osmos/base/coin.proto\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"M\n\x0bTallyResult\x12\x0b\n\x03yes\x18\x01 \x01(\t\x12\x0f\n\x07\x61\x62stain\x18\x02 \x01(\t\x12\n\n\x02no\x18\x03 \x01(\t\x12\x14\n\x0cno_with_veto\x18\x04 \x01(\t\"\xb4\x03\n\x08Proposal\x12\x13\n\x0bproposal_id\x18\x01 \x01(\x04\x12%\n\x07\x63ontent\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x32\n\x06status\x18\x03 \x01(\x0e\x32\".cosmos.gov.v1beta1.ProposalStatus\x12;\n\x12\x66inal_tally_result\x18\x04 \x01(\x0b\x32\x1f.cosmos.gov.v1beta1.TallyResult\x12/\n\x0bsubmit_time\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x34\n\x10\x64\x65posit_end_time\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12(\n\rtotal_deposit\x18\x07 \x03(\x0b\x32\x11.cosmos.base.Coin\x12\x35\n\x11voting_start_time\x18\x08 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x33\n\x0fvoting_end_time\x18\t \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"x\n\x16QueryProposalsResponse\x12/\n\tproposals\x18\x01 \x03(\x0b\x32\x1c.cosmos.gov.v1beta1.Proposal\x12-\n\npagination\x18\x02 \x01(\x0b\x32\x19.cosmos.base.PageResponse\"\xa4\x01\n\x15QueryProposalsRequest\x12;\n\x0fproposal_status\x18\x01 \x01(\x0e\x32\".cosmos.gov.v1beta1.ProposalStatus\x12\r\n\x05voter\x18\x02 \x01(\t\x12\x11\n\tdepositor\x18\x03 \x01(\t\x12,\n\npagination\x18\x04 \x01(\x0b\x32\x18.cosmos.base.PageRequest*\xce\x01\n\x0eProposalStatus\x12\x1f\n\x1bPROPOSAL_STATUS_UNSPECIFIED\x10\x00\x12\"\n\x1ePROPOSAL_STATUS_DEPOSIT_PERIOD\x10\x01\x12!\n\x1dPROPOSAL_STATUS_VOTING_PERIOD\x10\x02\x12\x1a\n\x16PROPOSAL_STATUS_PASSED\x10\x03\x12\x1c\n\x18PROPOSAL_STATUS_REJECTED\x10\x04\x12\x1a\n\x16PROPOSAL_STATUS_FAILED\x10\x05\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1e\x63osmos/gov/v1beta1/query.proto\x12\x12\x63osmos.gov.v1beta1\x1a\x1c\x63osmos/base/pagination.proto\x1a\x16\x63osmos/base/coin.proto\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"M\n\x0bTallyResult\x12\x0b\n\x03yes\x18\x01 \x01(\t\x12\x0f\n\x07\x61\x62stain\x18\x02 \x01(\t\x12\n\n\x02no\x18\x03 \x01(\t\x12\x14\n\x0cno_with_veto\x18\x04 \x01(\t\"\xb4\x03\n\x08Proposal\x12\x13\n\x0bproposal_id\x18\x01 \x01(\x04\x12%\n\x07\x63ontent\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x12\x32\n\x06status\x18\x03 \x01(\x0e\x32\".cosmos.gov.v1beta1.ProposalStatus\x12;\n\x12\x66inal_tally_result\x18\x04 \x01(\x0b\x32\x1f.cosmos.gov.v1beta1.TallyResult\x12/\n\x0bsubmit_time\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x34\n\x10\x64\x65posit_end_time\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12(\n\rtotal_deposit\x18\x07 \x03(\x0b\x32\x11.cosmos.base.Coin\x12\x35\n\x11voting_start_time\x18\x08 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x33\n\x0fvoting_end_time\x18\t \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"x\n\x16QueryProposalsResponse\x12/\n\tproposals\x18\x01 \x03(\x0b\x32\x1c.cosmos.gov.v1beta1.Proposal\x12-\n\npagination\x18\x02 \x01(\x0b\x32\x19.cosmos.base.PageResponse\"\xa4\x01\n\x15QueryProposalsRequest\x12;\n\x0fproposal_status\x18\x01 \x01(\x0e\x32\".cosmos.gov.v1beta1.ProposalStatus\x12\r\n\x05voter\x18\x02 \x01(\t\x12\x11\n\tdepositor\x18\x03 \x01(\t\x12,\n\npagination\x18\x04 \x01(\x0b\x32\x18.cosmos.base.PageRequest\"+\n\x14QueryProposalRequest\x12\x13\n\x0bproposal_id\x18\x01 \x01(\x04\"G\n\x15QueryProposalResponse\x12.\n\x08proposal\x18\x01 \x01(\x0b\x32\x1c.cosmos.gov.v1beta1.Proposal*\xce\x01\n\x0eProposalStatus\x12\x1f\n\x1bPROPOSAL_STATUS_UNSPECIFIED\x10\x00\x12\"\n\x1ePROPOSAL_STATUS_DEPOSIT_PERIOD\x10\x01\x12!\n\x1dPROPOSAL_STATUS_VOTING_PERIOD\x10\x02\x12\x1a\n\x16PROPOSAL_STATUS_PASSED\x10\x03\x12\x1c\n\x18PROPOSAL_STATUS_REJECTED\x10\x04\x12\x1a\n\x16PROPOSAL_STATUS_FAILED\x10\x05\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'cosmos.gov.v1beta1.query_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
-  _globals['_PROPOSALSTATUS']._serialized_start=976
-  _globals['_PROPOSALSTATUS']._serialized_end=1182
+  _globals['_PROPOSALSTATUS']._serialized_start=1094
+  _globals['_PROPOSALSTATUS']._serialized_end=1300
   _globals['_TALLYRESULT']._serialized_start=168
   _globals['_TALLYRESULT']._serialized_end=245
   _globals['_PROPOSAL']._serialized_start=248
@@ -35,4 +35,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_QUERYPROPOSALSRESPONSE']._serialized_end=806
   _globals['_QUERYPROPOSALSREQUEST']._serialized_start=809
   _globals['_QUERYPROPOSALSREQUEST']._serialized_end=973
+  _globals['_QUERYPROPOSALREQUEST']._serialized_start=975
+  _globals['_QUERYPROPOSALREQUEST']._serialized_end=1018
+  _globals['_QUERYPROPOSALRESPONSE']._serialized_start=1020
+  _globals['_QUERYPROPOSALRESPONSE']._serialized_end=1091
 # @@protoc_insertion_point(module_scope)
