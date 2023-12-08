@@ -5,6 +5,7 @@ import json
 from .chain import Chain
 from logging import INFO
 from log import get_configured_logger
+import traceback
 class ChainRegistry:
 
     archive = None
@@ -85,8 +86,9 @@ class ChainRegistry:
                     devnets[chain_path] = new_chain
                 else:
                     unknown[chain_path] = new_chain
-            except:
-                self.logger.error(f"Unable to extract chain information for {chain_path}")
+            except Exception as err:
+                traceback.print_exc()
+                self.logger.error(f"Unable to extract chain information for {chain_path}: {err}")
                 continue
 
         self.mainnets = mainnets
