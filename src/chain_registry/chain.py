@@ -87,8 +87,43 @@ class Chain():
             elif explorer["kind"] == self.default_explorer:
                 return explorer
         return None
-        
-    def get_active_proposals(self):
+    
+    def get_active_proposals_v1(self):
+        resp = None
+        endpoints = []
+        if len(self.rest_overides) == 0:
+            endpoints = self.get_rest_servers()
+            random.shuffle(endpoints)
+        else:
+            self.logger.debug("Rest endpoints are overriden for chain %s with values %s", self.chain_id, self.rest_overides)
+            endpoints = self.rest_overides
+
+        self.logger.debug("Attempting proposal request for chain %s with %d endpoints", self.chain_id, len(endpoints))
+        for endpoint in endpoints:
+            self.logger.debug("Attempting proposal request for chain %s at %s", self.chain_id, endpoint)
+            try:
+                response = requests.get(
+                    f"{endpoint}/cosmos/gov/v1/proposals?proposal_status=2",
+                    verify=False,
+                    timeout=10
+                )
+                response.raise_for_status()
+            except Exception as e:
+                if response is not None and response.reason == "Not Implemented":
+                    self.logger.debug("V1 Proposal request failed for chain %s at %s: %s", self.chain_id, endpoint, e)
+                    raise Exception(f"{self.chain_id}: Error getting active proposals at v1 endpoint")
+                self.logger.debug("Proposal request failed for chain %s at %s: %s", self.chain_id, endpoint, e)
+                continue
+            
+            resp = response
+            break
+
+        if resp is None:
+            raise Exception(f"{self.chain_id}: Error getting active proposals after trying all healthy endpoints")
+        self.logger.debug("Proposal request succeeded for chain %s", self.chain_id)
+        return resp.json()
+
+    def get_active_proposals_v1beta1(self):
         resp = None
 
         if len(self.rest_overides) == 0:

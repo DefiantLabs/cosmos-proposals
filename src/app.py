@@ -118,28 +118,38 @@ def main():
                 chain_registry_entry = response["chain_registry_entry"]
                 chain_object = response["chain_object"]
 
+                if response["v1_proposals"]:
+                    logger.info(f"Found active proposals for chain {response['chain_name']} using v1 API")
+                elif response["v1beta1_proposals"]:
+                    logger.info(f"Found active proposals for chain {response['chain_name']} using v1beta1 API")
+
                 for proposal in active_proposals["proposals"]:
 
-                    logger.info(f"Found active proposal {proposal['proposal_id']} on chain {chain_name}")
+                    if response["v1_proposals"]:
+                        proposal_data = normalize_v1_proposal(proposal)
+                    elif response["v1beta1_proposals"]:
+                        proposal_data = normalize_v1beta1_proposal(proposal)
 
-                    proposal_object = Proposal(mongo_db).find_or_create_proposal_by_chain_and_id(chain_object._id, proposal["proposal_id"])
-                    submit_time = proposal_object.get_or_set_proposal_submit_time(datetime.strptime(proposal["submit_time"].split(".")[0], "%Y-%m-%dT%H:%M:%S"))
+                    logger.info(f"Found active proposal {proposal_data['proposal_id']} on chain {chain_name}")
 
-                    logger.info(f"Proposal {proposal['proposal_id']} submit time is {submit_time}")
+                    proposal_object = Proposal(mongo_db).find_or_create_proposal_by_chain_and_id(chain_object._id, proposal_data["proposal_id"])
+                    submit_time = proposal_object.get_or_set_proposal_submit_time(datetime.strptime(proposal_data["submit_time"].split(".")[0], "%Y-%m-%dT%H:%M:%S"))
+
+                    logger.info(f"Proposal {proposal_data['proposal_id']} submit time is {submit_time}")
                     
                     if not channel.is_proposal_notified(proposal_object._id):
-                        logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
-                        text, blocks = get_new_proposal_slack_notification(chain_registry_entry, proposal)
+                        logger.info(f"Proposal {proposal_data['proposal_id']} is new, sending notification")
+                        text, blocks = get_new_proposal_slack_notification(chain_registry_entry, proposal_data)
                         logger.debug(f"Text: {text}")
                         logger.debug(f"Blocks: {blocks}")
 
-                        first_reply_text, first_reply_blocks = get_new_proposal_slack_first_reply(chain_registry_entry, proposal)
+                        first_reply_text, first_reply_blocks = get_new_proposal_slack_first_reply(chain_registry_entry, proposal_data)
 
                         logger.debug(f"First reply text: {first_reply_text}")
                         logger.debug(f"First reply blocks: {first_reply_blocks}")
 
                         notifications_needed.append({
-                            "proposal_id": proposal["proposal_id"],
+                            "proposal_id": proposal_data["proposal_id"],
                             "proposal_object": proposal_object,
                             "text": text,
                             "blocks": blocks,
@@ -151,7 +161,7 @@ def main():
                         })
                         
                     else:
-                        logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
+                        logger.info(f"Proposal {proposal_data['proposal_id']} has already been notified, skipping")
 
         if len(notifications_needed) == 0:
             logger.info("No new proposal notifications needed")
@@ -198,9 +208,43 @@ def main():
 
 def get_chain_active_proposals(chain_name: str, chain_registry_entry: ChainRegistryChain, chain_object: Chain):
     try:
-        return {"error": None, "active_proposals": chain_registry_entry.get_active_proposals(), "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
+        return {"error": None, "active_proposals": chain_registry_entry.get_active_proposals_v1(), "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry, "v1_proposals": True, "v1beta1_proposals": False}
     except Exception as e:
-        return {"error": e, "active_proposals": None, "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
+        try:
+            return {"error": None, "active_proposals": chain_registry_entry.get_active_proposals_v1beta1(), "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry, "v1_proposals": False, "v1beta1_proposals": True}
+        except Exception as e:
+            return {"error": e, "active_proposals": None, "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
+
+def normalize_v1_proposal(proposal):
+
+    title = proposal.get("title", "")
+    description = proposal.get("summary", "")
+
+    first_message = {}
+    if len(proposal["messages"]) > 0:
+        first_message = proposal["messages"][0]
+
+    if title == "" or description == "" and len(proposal["messages"]) > 0:
+        if title == "":
+            title = first_message.get("content", {}).get("title", "")
+        if description == "":
+            description = first_message.get("content", {}).get("description", "")
+    return {
+        "proposal_id": proposal["id"],
+        "title": title,
+        "description": description,
+        "submit_time": proposal["submit_time"],
+        "type": first_message.get("@type", "")
+    }
+
+def normalize_v1beta1_proposal(proposal):
+    return {
+        "proposal_id": proposal["proposal_id"],
+        "title": proposal["content"].get("title", ""),
+        "description": proposal["content"].get("description", ""),
+        "submit_time": proposal["submit_time"],
+        "type": proposal["content"].get("@type", "")
+    }
 
 def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain, proposal):
 
@@ -208,9 +252,9 @@ def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain
     chain_id = chain_registry_entry.chain_id
 
     try:
-        title = proposal['content']['title']
+        title = proposal['title']
     except:
-        title = f"No title (Type is {proposal['content']['@type']})"
+        title = f"No title (Type is {proposal['type']})"
 
     blocks = [
         {
@@ -273,7 +317,7 @@ def get_new_proposal_slack_first_reply(chain_registry_entry: ChainRegistryChain,
 
     description = ""
     try:
-        description = proposal['content']['description']
+        description = proposal['description']
 
         if len(description) > 300:
             description = description[:300].strip() + "..."
