@@ -48,7 +48,7 @@ def main():
 
     mongo_db = get_mongo_database(mongo_client)
 
-    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level, rest_overides=config.chain_registry_rest_overides)
+    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level, rest_overides=config.chain_registry_rest_overides, init_chains=config.chains)
 
     if config.do_slack:
         slack_client = WebClient(token=config.slack_bot_token, logger=logger)
@@ -119,9 +119,9 @@ def main():
                 chain_object = response["chain_object"]
 
                 if response["v1_proposals"]:
-                    logger.info(f"Found active proposals for chain {response['chain_name']} using v1 API")
+                    logger.debug(f"Found active proposals for chain {response['chain_name']} using v1 API")
                 elif response["v1beta1_proposals"]:
-                    logger.info(f"Found active proposals for chain {response['chain_name']} using v1beta1 API")
+                    logger.debug(f"Found active proposals for chain {response['chain_name']} using v1beta1 API")
 
                 for proposal in active_proposals["proposals"]:
 

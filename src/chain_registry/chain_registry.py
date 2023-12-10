@@ -9,13 +9,15 @@ class ChainRegistry:
 
     archive = None
 
-    def __init__(self, zip_url="https://github.com/cosmos/chain-registry/archive/refs/heads/master.zip", zip_location=None, log_level=INFO, rest_overides={}):
+    def __init__(self, zip_url="https://github.com/cosmos/chain-registry/archive/refs/heads/master.zip", zip_location=None, log_level=INFO, rest_overides={}, init_chains="*"):
         self.zip_url = zip_url
         self.loaded = False
         self.archive_contents = None
         self.zip_location = zip_location
         self.log_level = log_level
         self.logger = get_configured_logger(__name__, self.log_level, "")
+
+        self.init_chains = init_chains
 
         self.rest_overides = rest_overides
 
@@ -64,6 +66,10 @@ class ChainRegistry:
         for path in self.archive.walk.files(filter=['chain.json'], exclude_dirs=["*template*"]):
             chain = json.load(self.archive.openbin(path))
             chain_path = path.split("/")[-2]
+
+            if self.init_chains != "*" and chain_path not in self.init_chains:
+                self.logger.debug(f"Skipping chain {chain_path} as it is not in init_chains")
+                continue
 
             rest_overides = []
 
