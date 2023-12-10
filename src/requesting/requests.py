@@ -3,6 +3,7 @@ from mongo import Chain as MongoChain
 from .constants import V1_REQUEST_METHOD, V1BETA1_REQUEST_METHOD
 from .custom.neutron import get_neutron_active_proposals
 
+
 def get_active_proposals(
     chain_name: str, chain_registry_object: Chain, chain_object: MongoChain
 ):
@@ -14,6 +15,7 @@ def get_active_proposals(
         return CHAINS_TO_REQUEST_MAP["default_fn"](
             chain_name, chain_registry_object, chain_object
         )
+
 
 # This is the default proposal request function. It will be used for all chains that do not have a custom request function.
 # It does the following:
@@ -30,7 +32,7 @@ def get_chain_active_proposals(
             "chain_name": chain_name,
             "chain_object": chain_object,
             "chain_registry_entry": chain_registry_entry,
-            "request_method": V1_REQUEST_METHOD
+            "request_method": V1_REQUEST_METHOD,
         }
     except Exception as e:
         try:
@@ -40,7 +42,7 @@ def get_chain_active_proposals(
                 "chain_name": chain_name,
                 "chain_object": chain_object,
                 "chain_registry_entry": chain_registry_entry,
-                "request_method": V1BETA1_REQUEST_METHOD
+                "request_method": V1BETA1_REQUEST_METHOD,
             }
         except Exception as e:
             return {
@@ -51,4 +53,8 @@ def get_chain_active_proposals(
                 "chain_registry_entry": chain_registry_entry,
             }
 
-CHAINS_TO_REQUEST_MAP = {"default_fn": get_chain_active_proposals, "neutron-1": get_neutron_active_proposals}
+
+CHAINS_TO_REQUEST_MAP = {
+    "default_fn": get_chain_active_proposals,
+    "neutron-1": get_neutron_active_proposals,
+}
