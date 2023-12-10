@@ -9,6 +9,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from utils.lists import chunks
 import os
+from requesting import get_active_proposals, normalize_proposal_response
 
 from log import get_configured_logger
 
@@ -103,7 +104,7 @@ def main():
                 executions = []
                 for chain in chunk:
                     logger.debug(f"Submitting active proposals job for chain {chain[0]}")
-                    executions.append(executor.submit(get_chain_active_proposals, chain[0], chain[1]["chain_registry_entry"], chain[1]["chain_object"]))
+                    executions.append(executor.submit(get_active_proposals, chain[0], chain[1]["chain_registry_entry"], chain[1]["chain_object"]))
                 responses = [execution.result() for execution in executions]
 
             for response in responses:
@@ -118,17 +119,9 @@ def main():
                 chain_registry_entry = response["chain_registry_entry"]
                 chain_object = response["chain_object"]
 
-                if response["v1_proposals"]:
-                    logger.debug(f"Found active proposals for chain {response['chain_name']} using v1 API")
-                elif response["v1beta1_proposals"]:
-                    logger.debug(f"Found active proposals for chain {response['chain_name']} using v1beta1 API")
-
                 for proposal in active_proposals["proposals"]:
 
-                    if response["v1_proposals"]:
-                        proposal_data = normalize_v1_proposal(proposal)
-                    elif response["v1beta1_proposals"]:
-                        proposal_data = normalize_v1beta1_proposal(proposal)
+                    proposal_data = normalize_proposal_response(chain_registry_entry, proposal, response["request_method"])
 
                     logger.info(f"Found active proposal {proposal_data['proposal_id']} on chain {chain_name}")
 
@@ -205,46 +198,6 @@ def main():
         logger.info(f"Main loop finished in {round(loop_time, 2)} seconds, sleeping for {config.main_loop['sleep_time']} seconds")
 
         time.sleep(config.main_loop["sleep_time"])
-
-def get_chain_active_proposals(chain_name: str, chain_registry_entry: ChainRegistryChain, chain_object: Chain):
-    try:
-        return {"error": None, "active_proposals": chain_registry_entry.get_active_proposals_v1(), "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry, "v1_proposals": True, "v1beta1_proposals": False}
-    except Exception as e:
-        try:
-            return {"error": None, "active_proposals": chain_registry_entry.get_active_proposals_v1beta1(), "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry, "v1_proposals": False, "v1beta1_proposals": True}
-        except Exception as e:
-            return {"error": e, "active_proposals": None, "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
-
-def normalize_v1_proposal(proposal):
-
-    title = proposal.get("title", "")
-    description = proposal.get("summary", "")
-
-    first_message = {}
-    if len(proposal["messages"]) > 0:
-        first_message = proposal["messages"][0]
-
-    if title == "" or description == "" and len(proposal["messages"]) > 0:
-        if title == "":
-            title = first_message.get("content", {}).get("title", "")
-        if description == "":
-            description = first_message.get("content", {}).get("description", "")
-    return {
-        "proposal_id": proposal["id"],
-        "title": title,
-        "description": description,
-        "submit_time": proposal["submit_time"],
-        "type": first_message.get("@type", "")
-    }
-
-def normalize_v1beta1_proposal(proposal):
-    return {
-        "proposal_id": proposal["proposal_id"],
-        "title": proposal["content"].get("title", ""),
-        "description": proposal["content"].get("description", ""),
-        "submit_time": proposal["submit_time"],
-        "type": proposal["content"].get("@type", "")
-    }
 
 def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain, proposal):
 
