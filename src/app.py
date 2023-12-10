@@ -238,23 +238,13 @@ def get_new_proposal_slack_first_reply(chain_registry_entry: ChainRegistryChain,
     mintscan_chain_explorer = chain_registry_entry.get_explorer(explorer_name="mintscan")
 
     explorer_link = None
-    if mintscan_chain_explorer is not None:
-        explorer_url = f"{mintscan_chain_explorer['url']}/proposals/{proposal['proposal_id']}"
+    if chain_registry_entry.chain_id == "neutron-1":
+        explorer_url = f"https://governance.neutron.org/proposals/{proposal['proposal_id']}"
         explorer_link = {
-			"type": "section",
+            "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Mintscan>"
-            }
-        }
-    elif mintscan_chain_explorer is None and chain_registry_entry.chain_id == "pirin-1":
-        ping_pub_chain_explorer = chain_registry_entry.get_explorer(explorer_name="ping.pub")
-        explorer_url = f"{ping_pub_chain_explorer['url']}/gov/{proposal['proposal_id']}"
-        explorer_link = {
-			"type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Ping.pub>"
+                "text": f"<{explorer_url}|View on Neutron>"
             }
         }
     elif chain_registry_entry.chain_id == "kaiyo-1":
@@ -266,7 +256,25 @@ def get_new_proposal_slack_first_reply(chain_registry_entry: ChainRegistryChain,
                 "text": f"<{explorer_url}|View on Kujira Blue>"
             }
         }
-
+    elif chain_registry_entry.chain_id == "pirin-1":
+        ping_pub_chain_explorer = chain_registry_entry.get_explorer(explorer_name="ping.pub")
+        explorer_url = f"{ping_pub_chain_explorer['url']}/gov/{proposal['proposal_id']}"
+        explorer_link = {
+			"type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<{explorer_url}|View on Ping.pub>"
+            }
+        }
+    elif mintscan_chain_explorer is not None:
+        explorer_url = f"{mintscan_chain_explorer['url']}/proposals/{proposal['proposal_id']}"
+        explorer_link = {
+			"type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<{explorer_url}|View on Mintscan>"
+            }
+        }
 
     description = ""
     try:
