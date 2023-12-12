@@ -9,6 +9,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from utils.lists import chunks
 import os
+from requesting import get_active_proposals, normalize_proposal_response
 
 from log import get_configured_logger
 
@@ -48,7 +49,7 @@ def main():
 
     mongo_db = get_mongo_database(mongo_client)
 
-    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level, rest_overides=config.chain_registry_rest_overides)
+    chain_registry = ChainRegistry(zip_location=config.chain_registry_zip_location, log_level=config.log_level, rest_overides=config.chain_registry_rest_overides, init_chains=config.chains)
 
     if config.do_slack:
         slack_client = WebClient(token=config.slack_bot_token, logger=logger)
@@ -103,7 +104,7 @@ def main():
                 executions = []
                 for chain in chunk:
                     logger.debug(f"Submitting active proposals job for chain {chain[0]}")
-                    executions.append(executor.submit(get_chain_active_proposals, chain[0], chain[1]["chain_registry_entry"], chain[1]["chain_object"]))
+                    executions.append(executor.submit(get_active_proposals, chain[0], chain[1]["chain_registry_entry"], chain[1]["chain_object"], logger))
                 responses = [execution.result() for execution in executions]
 
             for response in responses:
@@ -120,26 +121,28 @@ def main():
 
                 for proposal in active_proposals["proposals"]:
 
-                    logger.info(f"Found active proposal {proposal['proposal_id']} on chain {chain_name}")
+                    proposal_data = normalize_proposal_response(chain_registry_entry, proposal, response["request_method"])
 
-                    proposal_object = Proposal(mongo_db).find_or_create_proposal_by_chain_and_id(chain_object._id, proposal["proposal_id"])
-                    submit_time = proposal_object.get_or_set_proposal_submit_time(datetime.strptime(proposal["submit_time"].split(".")[0], "%Y-%m-%dT%H:%M:%S"))
+                    logger.info(f"Found active proposal {proposal_data['proposal_id']} on chain {chain_name}")
 
-                    logger.info(f"Proposal {proposal['proposal_id']} submit time is {submit_time}")
+                    proposal_object = Proposal(mongo_db).find_or_create_proposal_by_chain_and_id(chain_object._id, proposal_data["proposal_id"])
+                    submit_time = proposal_object.get_or_set_proposal_submit_time(datetime.strptime(proposal_data["submit_time"].split(".")[0], "%Y-%m-%dT%H:%M:%S"))
+
+                    logger.info(f"Proposal {proposal_data['proposal_id']} submit time is {submit_time}")
                     
                     if not channel.is_proposal_notified(proposal_object._id):
-                        logger.info(f"Proposal {proposal['proposal_id']} is new, sending notification")
-                        text, blocks = get_new_proposal_slack_notification(chain_registry_entry, proposal)
+                        logger.info(f"Proposal {proposal_data['proposal_id']} is new, sending notification")
+                        text, blocks = get_new_proposal_slack_notification(chain_registry_entry, proposal_data)
                         logger.debug(f"Text: {text}")
                         logger.debug(f"Blocks: {blocks}")
 
-                        first_reply_text, first_reply_blocks = get_new_proposal_slack_first_reply(chain_registry_entry, proposal)
+                        first_reply_text, first_reply_blocks = get_new_proposal_slack_first_reply(chain_registry_entry, proposal_data)
 
                         logger.debug(f"First reply text: {first_reply_text}")
                         logger.debug(f"First reply blocks: {first_reply_blocks}")
 
                         notifications_needed.append({
-                            "proposal_id": proposal["proposal_id"],
+                            "proposal_id": proposal_data["proposal_id"],
                             "proposal_object": proposal_object,
                             "text": text,
                             "blocks": blocks,
@@ -151,7 +154,7 @@ def main():
                         })
                         
                     else:
-                        logger.info(f"Proposal {proposal['proposal_id']} has already been notified, skipping")
+                        logger.info(f"Proposal {proposal_data['proposal_id']} has already been notified, skipping")
 
         if len(notifications_needed) == 0:
             logger.info("No new proposal notifications needed")
@@ -196,21 +199,17 @@ def main():
 
         time.sleep(config.main_loop["sleep_time"])
 
-def get_chain_active_proposals(chain_name: str, chain_registry_entry: ChainRegistryChain, chain_object: Chain):
-    try:
-        return {"error": None, "active_proposals": chain_registry_entry.get_active_proposals(), "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
-    except Exception as e:
-        return {"error": e, "active_proposals": None, "chain_name": chain_name, "chain_object": chain_object, "chain_registry_entry": chain_registry_entry}
-
 def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain, proposal):
 
     chain_name = chain_registry_entry.pretty_name
     chain_id = chain_registry_entry.chain_id
 
     try:
-        title = proposal['content']['title']
+        title = proposal['title']
+        if title == "":
+            raise
     except:
-        title = f"No title (Type is {proposal['content']['@type']})"
+        title = f"No title (Type is {proposal['type']})"
 
     blocks = [
         {
@@ -241,39 +240,52 @@ def get_new_proposal_slack_first_reply(chain_registry_entry: ChainRegistryChain,
     mintscan_chain_explorer = chain_registry_entry.get_explorer(explorer_name="mintscan")
 
     explorer_link = None
-    if mintscan_chain_explorer is not None:
-        explorer_url = f"{mintscan_chain_explorer['url']}/proposals/{proposal['proposal_id']}"
-        explorer_link = {
-			"type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Mintscan>"
+    explorer_url = ""
+    try:
+        if chain_registry_entry.chain_id == "neutron-1":
+            explorer_url = f"https://governance.neutron.org/proposals/{proposal['proposal_id']}"
+            explorer_link = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"<{explorer_url}|View on Neutron>"
+                }
             }
-        }
-    elif mintscan_chain_explorer is None and chain_registry_entry.chain_id == "pirin-1":
-        ping_pub_chain_explorer = chain_registry_entry.get_explorer(explorer_name="ping.pub")
-        explorer_url = f"{ping_pub_chain_explorer['url']}/gov/{proposal['proposal_id']}"
-        explorer_link = {
-			"type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Ping.pub>"
+        elif chain_registry_entry.chain_id == "kaiyo-1":
+            explorer_url = f"https://blue.kujira.network/govern/{proposal['proposal_id']}"
+            explorer_link = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"<{explorer_url}|View on Kujira Blue>"
+                }
             }
-        }
-    elif chain_registry_entry.chain_id == "kaiyo-1":
-        explorer_url = f"https://blue.kujira.network/govern/{proposal['proposal_id']}"
-        explorer_link = {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Kujira Blue>"
+        elif chain_registry_entry.chain_id == "pirin-1" or chain_registry_entry.chain_id == "columbus-5":
+            ping_pub_chain_explorer = chain_registry_entry.get_explorer(explorer_name="ping.pub")
+            explorer_url = f"{ping_pub_chain_explorer['url']}/gov/{proposal['proposal_id']}"
+            explorer_link = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"<{explorer_url}|View on Ping.pub>"
+                }
             }
-        }
-
+        elif mintscan_chain_explorer is not None:
+            explorer_url = f"{mintscan_chain_explorer['url']}/proposals/{proposal['proposal_id']}"
+            explorer_link = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"<{explorer_url}|View on Mintscan>"
+                }
+            }
+    except:
+        # Do not fail to send a message if the explorer link broke
+        pass
 
     description = ""
     try:
-        description = proposal['content']['description']
+        description = proposal['description']
 
         if len(description) > 300:
             description = description[:300].strip() + "..."

@@ -1,0 +1,4 @@
+
+V1_REQUEST_METHOD = "v1_proposals"
+V1BETA1_REQUEST_METHOD = "v1beta1_proposals"
+CUSTOM_REQUEST_METHOD = "custom"
