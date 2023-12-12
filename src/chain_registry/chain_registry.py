@@ -67,7 +67,7 @@ class ChainRegistry:
             chain = json.load(self.archive.openbin(path))
             chain_path = path.split("/")[-2]
 
-            if self.init_chains != "*" and chain_path not in self.init_chains:
+            if self.init_chains != "*" and chain_path not in self.init_chains and chain["chain_id"] not in self.init_chains:
                 self.logger.debug(f"Skipping chain {chain_path} as it is not in init_chains")
                 continue
 

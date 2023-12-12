@@ -112,7 +112,7 @@ class Chain():
             except Exception as e:
                 if response is not None and response.reason == "Not Implemented":
                     self.logger.debug("V1 Proposal request failed for chain %s at %s: %s", self.chain_id, endpoint, e)
-                    raise Exception(f"{self.chain_id}: Error getting active proposals at v1 endpoint")
+                    raise Exception(f"{self.chain_id}: Error getting active proposals at v1 endpoint, endpoint not implemented")
                 self.logger.debug("Proposal request failed for chain %s at %s: %s", self.chain_id, endpoint, e)
                 continue
             
@@ -120,7 +120,7 @@ class Chain():
             break
 
         if resp is None:
-            raise Exception(f"{self.chain_id}: Error getting active proposals after trying all healthy endpoints")
+            raise Exception(f"{self.chain_id}: Error getting active proposals after trying all endpoints")
         self.logger.debug("Proposal request succeeded for chain %s", self.chain_id)
         return resp.json()
 

@@ -37,7 +37,7 @@ def get_chain_active_proposals(
         logger.debug(f"{chain_name}: Successfully retrieved active proposals from chain using v1 endpoint")
         return ret
     except Exception as v1_endpoint_error:
-        logger.error(
+        logger.debug(
             f"{chain_name}: Failed to retrieve active proposals from chain using v1 endpoint. Falling back to v1beta1 endpoint. V1 Endpoint error: {v1_endpoint_error}."
         )
         try:
