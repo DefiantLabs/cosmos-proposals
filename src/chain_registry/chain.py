@@ -122,6 +122,17 @@ class Chain():
         if resp is None:
             raise Exception(f"{self.chain_id}: Error getting active proposals after trying all endpoints")
         self.logger.debug("Proposal request succeeded for chain %s", self.chain_id)
+
+        # Some chains seem to be returning 200 responses with error codes in the JSON, attempt to handle those chains
+        if resp.status_code == 200:
+            try:
+                resp.json()
+            except:
+                raise Exception(f"{self.chain_id}: Proposal request succeeded but response is not valid json")
+            try:
+                resp.json()["proposals"]
+            except:
+                raise Exception(f"{self.chain_id}: Proposal request succeeded but response does not have a proposals key")
         return resp.json()
 
     def get_active_proposals_v1beta1(self):

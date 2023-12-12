@@ -26,8 +26,12 @@ class ChainRegistry:
         self.devnets = {}
         self.unknown = {}
 
+        self.logger.info("Loading chain registry")
         self.load()
+        self.logger.info("Chain registry loaded")
+        self.logger.info("Extracting chain registry")
         self.extract()
+        self.logger.info("Chain registry extracted")
 
     def load(self):
 

@@ -119,6 +119,10 @@ def main():
                 chain_registry_entry = response["chain_registry_entry"]
                 chain_object = response["chain_object"]
 
+                if "proposals" not in active_proposals:
+                    logger.error(f"Active proposals response for chain {chain_name} does not contain a proposals key, cannot process")
+                    continue
+
                 for proposal in active_proposals["proposals"]:
 
                     proposal_data = normalize_proposal_response(chain_registry_entry, proposal, response["request_method"])
