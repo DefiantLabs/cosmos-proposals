@@ -104,7 +104,7 @@ def main():
                 executions = []
                 for chain in chunk:
                     logger.debug(f"Submitting active proposals job for chain {chain[0]}")
-                    executions.append(executor.submit(get_active_proposals, chain[0], chain[1]["chain_registry_entry"], chain[1]["chain_object"]))
+                    executions.append(executor.submit(get_active_proposals, chain[0], chain[1]["chain_registry_entry"], chain[1]["chain_object"], logger))
                 responses = [execution.result() for execution in executions]
 
             for response in responses:
@@ -206,6 +206,8 @@ def get_new_proposal_slack_notification(chain_registry_entry: ChainRegistryChain
 
     try:
         title = proposal['title']
+        if title == "":
+            raise
     except:
         title = f"No title (Type is {proposal['type']})"
 

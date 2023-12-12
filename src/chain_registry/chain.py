@@ -101,6 +101,7 @@ class Chain():
         self.logger.debug("Attempting proposal request for chain %s with %d endpoints", self.chain_id, len(endpoints))
         for endpoint in endpoints:
             self.logger.debug("Attempting proposal request for chain %s at %s", self.chain_id, endpoint)
+            response = None
             try:
                 response = requests.get(
                     f"{endpoint}/cosmos/gov/v1/proposals?proposal_status=2",

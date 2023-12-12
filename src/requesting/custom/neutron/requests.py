@@ -7,7 +7,7 @@ from requesting.constants import CUSTOM_REQUEST_METHOD
 import json
 
 def get_neutron_active_proposals(
-    chain_name: str, chain_registry_object: Chain, chain_object: MongoChain
+    chain_name: str, chain_registry_object: Chain, chain_object: MongoChain, logger
 ):
     for rest_server in chain_registry_object.get_rest_servers():
         proposals = {}
@@ -29,6 +29,9 @@ def get_neutron_active_proposals(
 
                 start_after = proposal_page[-1]["id"]
         except Exception as e:
+            logger.error(
+                f"Failed to retrieve active proposals from Neutron using custom function. Error: {e}"
+            )
             return {
                 "error": e,
                 "active_proposals": None,
