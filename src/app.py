@@ -240,43 +240,48 @@ def get_new_proposal_slack_first_reply(chain_registry_entry: ChainRegistryChain,
     mintscan_chain_explorer = chain_registry_entry.get_explorer(explorer_name="mintscan")
 
     explorer_link = None
-    if chain_registry_entry.chain_id == "neutron-1":
-        explorer_url = f"https://governance.neutron.org/proposals/{proposal['proposal_id']}"
-        explorer_link = {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Neutron>"
+    explorer_url = ""
+    try:
+        if chain_registry_entry.chain_id == "neutron-1":
+            explorer_url = f"https://governance.neutron.org/proposals/{proposal['proposal_id']}"
+            explorer_link = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"<{explorer_url}|View on Neutron>"
+                }
             }
-        }
-    elif chain_registry_entry.chain_id == "kaiyo-1":
-        explorer_url = f"https://blue.kujira.network/govern/{proposal['proposal_id']}"
-        explorer_link = {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Kujira Blue>"
+        elif chain_registry_entry.chain_id == "kaiyo-1":
+            explorer_url = f"https://blue.kujira.network/govern/{proposal['proposal_id']}"
+            explorer_link = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"<{explorer_url}|View on Kujira Blue>"
+                }
             }
-        }
-    elif chain_registry_entry.chain_id == "pirin-1":
-        ping_pub_chain_explorer = chain_registry_entry.get_explorer(explorer_name="ping.pub")
-        explorer_url = f"{ping_pub_chain_explorer['url']}/gov/{proposal['proposal_id']}"
-        explorer_link = {
-			"type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Ping.pub>"
+        elif chain_registry_entry.chain_id == "pirin-1" or chain_registry_entry.chain_id == "columbus-5":
+            ping_pub_chain_explorer = chain_registry_entry.get_explorer(explorer_name="ping.pub")
+            explorer_url = f"{ping_pub_chain_explorer['url']}/gov/{proposal['proposal_id']}"
+            explorer_link = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"<{explorer_url}|View on Ping.pub>"
+                }
             }
-        }
-    elif mintscan_chain_explorer is not None:
-        explorer_url = f"{mintscan_chain_explorer['url']}/proposals/{proposal['proposal_id']}"
-        explorer_link = {
-			"type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<{explorer_url}|View on Mintscan>"
+        elif mintscan_chain_explorer is not None:
+            explorer_url = f"{mintscan_chain_explorer['url']}/proposals/{proposal['proposal_id']}"
+            explorer_link = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"<{explorer_url}|View on Mintscan>"
+                }
             }
-        }
+    except:
+        # Do not fail to send a message if the explorer link broke
+        pass
 
     description = ""
     try:
