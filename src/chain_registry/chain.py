@@ -145,7 +145,7 @@ class Chain():
 
         if resp is None:
             raise Exception(f"{self.chain_id}: Error getting active proposals after trying all endpoints")
-        self.logger.debug("Proposal request succeeded for chain %s", self.chain_id)
+        self.logger.info("Proposal request succeeded for chain %s with endpoint %s", self.chain_id, endpoint)
 
         # Some chains seem to be returning 200 responses with error codes in the JSON, attempt to handle those chains
         if resp.status_code == 200:
@@ -193,5 +193,5 @@ class Chain():
 
         if resp is None:
             raise Exception(f"{self.chain_id}: Error getting active proposals after trying all healthy endpoints")
-        self.logger.debug("Proposal request succeeded for chain %s", self.chain_id)
+        self.logger.info("Proposal request succeeded for chain %s with endpoint %s", self.chain_id, endpoint)
         return resp.json()
