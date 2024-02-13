@@ -2,7 +2,7 @@ import argparse
 from config import Config
 from chain_registry import ChainRegistry, Chain as ChainRegistryChain
 from mongo import get_client as get_mongo_client, get_database as get_mongo_database, SlackChannel, Chain, Proposal
-from datetime import datetime
+from datetime import datetime, timedelta
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import time
@@ -12,6 +12,8 @@ import os
 from requesting import get_active_proposals, normalize_proposal_response
 
 from log import get_configured_logger
+
+PROPOSAL_SUBMITTIME_DAY_THRESHOLD = 21
 
 def get_app_base_env():
     # get config file path from ENV
@@ -125,7 +127,18 @@ def main():
 
                 for proposal in active_proposals["proposals"]:
 
+                    if proposal["status"] != "PROPOSAL_STATUS_VOTING_PERIOD":
+                        logger.info(f"Found non-active proposal {proposal_data['proposal_id']} on chain {chain_name}, skipping")
+                        continue
+
                     proposal_data = normalize_proposal_response(chain_registry_entry, proposal, response["request_method"])
+
+                    try:
+                        if parse_submit_time(proposal_data["submit_time"]) < datetime.utcnow() - timedelta(days=PROPOSAL_SUBMITTIME_DAY_THRESHOLD):
+                            logger.info(f"Proposal {proposal_data['proposal_id']} submit time {proposal_data['submit_time']} on chain {chain_name} is older than {PROPOSAL_SUBMITTIME_DAY_THRESHOLD} days, skipping")
+                            continue
+                    except Exception as err:
+                        logger.error(f"Error parsing submit time for proposal {proposal_data['proposal_id']} on chain {chain_name}: {err}")
 
                     logger.info(f"Found active proposal {proposal_data['proposal_id']} on chain {chain_name}")
 
@@ -347,6 +360,10 @@ def parse_description_to_blocks(description: str):
         )
 
     return description_blocks
+
+def parse_submit_time(timestamp):
+    # remove the milliseconds from the timestamp, cosmos timestamps dont have a standard number of milliseconds which makes them hard to parse in Python
+    return datetime.strptime(timestamp.split(".")[0], "%Y-%m-%dT%H:%M:%S")
 
 if __name__ == '__main__':
     main()

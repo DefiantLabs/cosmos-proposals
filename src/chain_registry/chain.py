@@ -47,38 +47,62 @@ class Chain():
         return self.rest_servers
     
     def get_healthy_rest_servers(self):
-        return self._execute_health_check(self.get_rest_servers())
+        return self._execute_rest_health_check(self.get_rest_servers())
     
     def get_healthy_rpc_servers(self):
-        return self._execute_health_check(self.get_rpc_servers())
+        return self._execute_rpc_health_check(self.get_rpc_servers())
     
-    def _execute_health_check(self, servers):
+    def _execute_rest_health_check(self, servers):
         with ThreadPoolExecutor(max_workers=num_workers) as executor:
             healthy_endpoints = [
                 server
                 for server, is_healthy in executor.map(
-                    lambda server: (server, self._is_endpoint_healthy(server)), servers
+                    lambda server: (server, self._is_rest_endpoint_healthy(server)), servers
                 )
                 if is_healthy
             ]
         return healthy_endpoints
 
-    def _is_endpoint_healthy(self, endpoint):
+    def _execute_rpc_health_check(self, servers):
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            healthy_endpoints = [
+                server
+                for server, is_healthy in executor.map(
+                    lambda server: (server, self._is_rpc_endpoint_healthy(server)), servers
+                )
+                if is_healthy
+            ]
+        return healthy_endpoints
+
+    def _is_rest_endpoint_healthy(self, endpoint):
         try:
-            response = requests.get(f"{endpoint}/node_info", timeout=3, verify=False)
+            response = requests.get(f"{endpoint}/syncing", timeout=3, verify=False)
             if response.status_code == 200:
-                self.logger.debug("Chain %s endpoint %s is healthy from /node_info request", self.chain_id, endpoint)
+                # never use chains that are still syncing
+                if response.json()["syncing"]:
+                    self.logger.debug("Chain %s endpoint %s is still syncing from /syncing request", self.chain_id, endpoint)
+                    return False
+                self.logger.debug("Chain %s endpoint %s is healthy from /syncing request", self.chain_id, endpoint)
                 return True
-            response = requests.get(f"{endpoint}/cosmos/gov/v1beta1/proposals?proposal_status=2", timeout=3, verify=False)
+        except Exception as err:
+            self.logger.debug("Chain %s endpoint %s is unhealthy from error", self.chain_id, endpoint)
+            return False
+        return False
+
+    def _is_rpc_endpoint_healthy(self, endpoint):
+        try:
+            response = requests.get(f"{endpoint}/status", timeout=3, verify=False)
             if response.status_code == 200:
-                self.logger.debug("Chain %s endpoint %s is healthy from /cosmos/gov/v1beta1/proposals request", self.chain_id, endpoint)
+                if response.json()["result"]["sync_info"]["catching_up"]:
+                    self.logger.debug("Chain %s endpoint %s is still syncing from /status request", self.chain_id, endpoint)
+                    return False
+                self.logger.debug("Chain %s endpoint %s is healthy from /node_info request", self.chain_id, endpoint)
                 return True
         except:
             self.logger.debug("Chain %s endpoint %s is unhealthy from error", self.chain_id, endpoint)
             return False
-        self.logger.debug("Chain %s endpoint %s is unhealthy due to error responses", self.chain_id, endpoint)
         return False
-        
+
     def get_explorer(self, explorer_name=None):
 
         for explorer in self.explorers:
@@ -121,7 +145,7 @@ class Chain():
 
         if resp is None:
             raise Exception(f"{self.chain_id}: Error getting active proposals after trying all endpoints")
-        self.logger.debug("Proposal request succeeded for chain %s", self.chain_id)
+        self.logger.info("Proposal request succeeded for chain %s with endpoint %s", self.chain_id, endpoint)
 
         # Some chains seem to be returning 200 responses with error codes in the JSON, attempt to handle those chains
         if resp.status_code == 200:
@@ -169,5 +193,5 @@ class Chain():
 
         if resp is None:
             raise Exception(f"{self.chain_id}: Error getting active proposals after trying all healthy endpoints")
-        self.logger.debug("Proposal request succeeded for chain %s", self.chain_id)
+        self.logger.info("Proposal request succeeded for chain %s with endpoint %s", self.chain_id, endpoint)
         return resp.json()
