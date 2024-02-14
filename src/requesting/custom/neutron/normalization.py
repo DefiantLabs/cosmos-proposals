@@ -9,4 +9,5 @@ def normalize_neutron_active_proposal(proposal):
             "%Y-%m-%dT%H:%M:%S"
         ),  # Neutron does not have a submit time, so we use the current time to fake it. Its currently unused in the application anyway, may be removed later.
         "type": "Neutron Single Proposal",
+        "status": "PROPOSAL_STATUS_VOTING_PERIOD"
     }

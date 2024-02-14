@@ -127,11 +127,15 @@ def main():
 
                 for proposal in active_proposals["proposals"]:
 
-                    if proposal["status"] != "PROPOSAL_STATUS_VOTING_PERIOD":
-                        logger.info(f"Found non-active proposal {proposal_data['proposal_id']} on chain {chain_name}, skipping")
-                        continue
-
                     proposal_data = normalize_proposal_response(chain_registry_entry, proposal, response["request_method"])
+
+                    try:
+                        if proposal_data["status"] != "PROPOSAL_STATUS_VOTING_PERIOD":
+                            logger.info(f"Found non-active proposal {proposal_data['proposal_id']} on chain {chain_name}, skipping")
+                            continue
+                    except Exception as err:
+                        logger.info(f"Unable to pre-check proposal status {proposal_data['proposal_id']} on chain {chain_name}, skipping")
+                        continue
 
                     try:
                         if parse_submit_time(proposal_data["submit_time"]) < datetime.utcnow() - timedelta(days=PROPOSAL_SUBMITTIME_DAY_THRESHOLD):
