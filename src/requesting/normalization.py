@@ -30,6 +30,7 @@ def normalize_v1_proposal(proposal):
         "description": description,
         "submit_time": proposal["submit_time"],
         "type": first_message.get("@type", ""),
+        "status": proposal.get("status", ""),
     }
 
 
@@ -40,6 +41,7 @@ def normalize_v1beta1_proposal(proposal):
         "description": proposal["content"].get("description", ""),
         "submit_time": proposal["submit_time"],
         "type": proposal["content"].get("@type", ""),
+        "status": proposal.get("status", ""),
     }
 
 
