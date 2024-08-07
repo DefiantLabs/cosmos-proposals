@@ -5,6 +5,10 @@ import json
 from .chain import Chain
 from logging import INFO
 from log import get_configured_logger
+
+# This is a list of chain registry paths that the code is not prepared to handle
+CHAIN_REGISTRY_PATH_DENYLIST = ["*template*", "_non-cosmos"]
+
 class ChainRegistry:
 
     archive = None
@@ -67,10 +71,9 @@ class ChainRegistry:
         testnets = {}
         devnets = {}
         unknown = {}
-        for path in self.archive.walk.files(filter=['chain.json'], exclude_dirs=["*template*"]):
+        for path in self.archive.walk.files(filter=['chain.json'], exclude_dirs=CHAIN_REGISTRY_PATH_DENYLIST):
             chain = json.load(self.archive.openbin(path))
             chain_path = path.split("/")[-2]
-
             if self.init_chains != "*" and chain_path not in self.init_chains and chain["chain_id"] not in self.init_chains:
                 self.logger.debug(f"Skipping chain {chain_path} as it is not in init_chains")
                 continue
